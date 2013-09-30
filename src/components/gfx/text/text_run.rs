@@ -3,10 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use std::vec::VecIterator;
+use std::str;
+use std::char;
 
 use font_context::FontContext;
 use geometry::Au;
-use text::glyph::GlyphStore;
+use text::glyph::{DetailedGlyphStore, GlyphStore};
 use font::{Font, FontDescriptor, RunMetrics};
 use servo_util::range::Range;
 use extra::arc::Arc;
@@ -118,7 +120,8 @@ impl<'self> Iterator<Range> for LineIterator<'self> {
 
 impl<'self> TextRun {
     pub fn new(font: @mut Font, text: ~str, decoration: CSSTextDecoration) -> TextRun {
-        let glyphs = TextRun::break_and_shape(font, text);
+        //let glyphs = TextRun::break_and_shape(font, text);
+        let glyphs = TextRun::break_and_shape_simple(font, text);
 
         let run = TextRun {
             text: text,
@@ -133,6 +136,51 @@ impl<'self> TextRun {
         self.font.teardown();
     }
 
+    pub fn break_and_shape_simple(font: @mut Font, text: &str) -> ~[Arc<GlyphStore>] {        
+        let mut is_whitespace = false;
+        let mut byte_i = 0u;
+        let mut glyphs = ~[];
+        let mut res = ~[];
+
+        while byte_i < text.len() {
+            let range = text.char_range_at(byte_i);
+            let ch = range.ch;
+            let next = range.next;
+            match ch {
+                ' ' | '\t' | '\n' => {
+                    if !is_whitespace {
+                        if glyphs.len() > 0 {
+                            res.push(Arc::new(GlyphStore { 
+                                entry_buffer: glyphs,
+                                detail_store: DetailedGlyphStore::new(),
+                                is_whitespace: false,
+                            }));
+                            glyphs = ~[];
+                        }
+                        res.push(Arc::new(GlyphStore { 
+                            entry_buffer: ~[font.shape_char(ch)],
+                            detail_store: DetailedGlyphStore::new(),
+                            is_whitespace: true,
+                        }));
+                    }
+                    is_whitespace = true;                    
+                }
+                _ => {
+                    glyphs.push(font.shape_char(ch));
+                    is_whitespace = false;
+                }
+            }
+            byte_i = next;
+        }
+        if glyphs.len() > 0 {
+            res.push(Arc::new(GlyphStore { 
+                entry_buffer: glyphs,
+                detail_store: DetailedGlyphStore::new(),
+                is_whitespace: false,
+            }));
+        }
+        res
+    }
     pub fn break_and_shape(font: @mut Font, text: &str) -> ~[Arc<GlyphStore>] {
         // TODO(Issue #230): do a better job. See Gecko's LineBreaker.
 
@@ -164,16 +212,15 @@ impl<'self> TextRun {
                     _ => false
                 }
             };
-
             // Create a glyph store for this slice if it's nonempty.
             if can_break_before && byte_i > byte_last_boundary {
                 let slice = text.slice(byte_last_boundary, byte_i).to_owned();
                 debug!("creating glyph store for slice %? (ws? %?), %? - %? in run %?",
                         slice, !cur_slice_is_whitespace, byte_last_boundary, byte_i, text);
+                                
                 glyphs.push(font.shape_text(slice, !cur_slice_is_whitespace));
                 byte_last_boundary = byte_i;
             }
-
             byte_i = next;
         }
 

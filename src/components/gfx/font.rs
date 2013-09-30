@@ -13,8 +13,9 @@ use std::cast;
 use std::ptr;
 use std::str;
 use std::vec;
+use std::char;
 use servo_util::cache::{Cache, HashCache};
-use text::glyph::{GlyphStore, GlyphIndex};
+use text::glyph::{GlyphStore, GlyphIndex, GlyphEntry};
 use text::shaping::ShaperMethods;
 use text::{Shaper, TextRun};
 use extra::arc::Arc;
@@ -244,6 +245,7 @@ pub struct Font {
     backend: BackendType,
     profiler_chan: ProfilerChan,
     shape_cache: HashCache<~str, Arc<GlyphStore>>,
+    shape_char_cache: ~[Option<GlyphEntry>],
 }
 
 impl Font {
@@ -272,6 +274,7 @@ impl Font {
             backend: backend,
             profiler_chan: profiler_chan,
             shape_cache: HashCache::new(),
+            shape_char_cache: vec::from_elem(256, None)
         });
     }
 
@@ -289,6 +292,7 @@ impl Font {
             backend: backend,
             profiler_chan: profiler_chan,
             shape_cache: HashCache::new(),
+            shape_char_cache: vec::from_elem(256, None),
         }
     }
 
@@ -455,10 +459,28 @@ impl Font {
         RunMetrics::new(advance, self.metrics.ascent, self.metrics.descent)
     }
 
+    pub fn shape_char(@mut self, ch: char) -> GlyphEntry {
+        do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
+            let shaper = self.get_shaper();
+            let cache = self.shape_char_cache[ch as uint].clone();
+            match cache {
+                Some(v) => v,
+                None => {
+                    //printfln!("shape_char - cache miss: %?", *ch)
+                    let mut glyphs = GlyphStore::new(1, char::is_whitespace(ch));
+                    shaper.shape_text(str::from_char(ch), &mut glyphs);
+                    self.shape_char_cache[ch as uint] = Some(glyphs.entry_buffer[0].clone());
+                    glyphs.entry_buffer[0]
+                }
+            }
+        }
+    }
+
     pub fn shape_text(@mut self, text: ~str, is_whitespace: bool) -> Arc<GlyphStore> {
         do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
             let shaper = self.get_shaper();
             do self.shape_cache.find_or_create(&text) |txt| {
+                //printfln!("shape_text - cache miss: %?", *txt)
                 let mut glyphs = GlyphStore::new(text.char_len(), is_whitespace);
                 shaper.shape_text(*txt, &mut glyphs);
                 Arc::new(glyphs)

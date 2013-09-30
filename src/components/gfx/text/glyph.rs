@@ -303,6 +303,7 @@ impl Ord for DetailedGlyphRecord {
 // until a lookup is actually performed; this matches the expected
 // usage pattern of setting/appending all the detailed glyphs, and
 // then querying without setting.
+#[deriving(Clone)]
 struct DetailedGlyphStore {
     detail_buffer: ~[DetailedGlyph],
     detail_lookup: ~[DetailedGlyphRecord],
@@ -310,7 +311,7 @@ struct DetailedGlyphStore {
 }
 
 impl<'self> DetailedGlyphStore {
-    fn new() -> DetailedGlyphStore {
+    pub fn new() -> DetailedGlyphStore {
         DetailedGlyphStore {
             detail_buffer: ~[], // TODO: default size?
             detail_lookup: ~[],
@@ -506,6 +507,7 @@ impl<'self> GlyphInfo<'self> {
 }
 
 // Public data structure and API for storing and retrieving glyph data
+#[deriving(Clone)]
 pub struct GlyphStore {
     entry_buffer: ~[GlyphEntry],
     detail_store: DetailedGlyphStore,
@@ -516,7 +518,7 @@ impl<'self> GlyphStore {
     // Initializes the glyph store, but doesn't actually shape anything.
     // Use the set_glyph, set_glyphs() methods to store glyph data.
     pub fn new(length: uint, is_whitespace: bool) -> GlyphStore {
-        assert!(length > 0);
+        //assert!(length > 0);
 
         GlyphStore {
             entry_buffer: vec::from_elem(length, GlyphEntry::initial()),

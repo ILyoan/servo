@@ -14,6 +14,7 @@ use text::util::{float_to_fixed, fixed_to_float, fixed_to_rounded_int};
 
 use std::cast::transmute;
 use std::char;
+use std::str;
 use std::libc::{c_uint, c_int, c_void, c_char};
 use std::ptr;
 use std::ptr::null;
