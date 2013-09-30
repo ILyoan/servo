@@ -460,7 +460,7 @@ impl Font {
     }
 
     pub fn shape_char(@mut self, ch: char) -> GlyphEntry {
-        do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
+        //do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
             let shaper = self.get_shaper();
             let cache = self.shape_char_cache[ch as uint].clone();
             match cache {
@@ -473,7 +473,7 @@ impl Font {
                     glyphs.entry_buffer[0]
                 }
             }
-        }
+        //}
     }
 
     pub fn shape_text(@mut self, text: ~str, is_whitespace: bool) -> Arc<GlyphStore> {
