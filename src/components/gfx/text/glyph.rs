@@ -42,7 +42,7 @@ impl GlyphEntry {
     }
 
     // Creates a GlyphEntry for the common case
-    fn simple(index: GlyphIndex, advance: Au) -> GlyphEntry {
+    pub fn simple(index: GlyphIndex, advance: Au) -> GlyphEntry {
         assert!(is_simple_glyph_id(index));
         assert!(is_simple_advance(advance));
 
@@ -54,7 +54,7 @@ impl GlyphEntry {
 
     // Create a GlyphEntry for uncommon case; should be accompanied by
     // initialization of the actual DetailedGlyph data in DetailedGlyphStore
-    fn complex(starts_cluster: bool, starts_ligature: bool, glyph_count: uint) -> GlyphEntry {
+    pub fn complex(starts_cluster: bool, starts_ligature: bool, glyph_count: uint) -> GlyphEntry {
         assert!(glyph_count <= u16::max_value as uint);
 
         debug!("creating complex glyph entry: starts_cluster=%?, starts_ligature=%?, \
@@ -78,7 +78,7 @@ impl GlyphEntry {
 
     /// Create a GlyphEntry for the case where glyphs couldn't be found for the specified
     /// character.
-    fn missing(glyph_count: uint) -> GlyphEntry {
+    pub fn missing(glyph_count: uint) -> GlyphEntry {
         assert!(glyph_count <= u16::max_value as uint);
 
         GlyphEntry::new((glyph_count as u32) << GLYPH_COUNT_SHIFT)

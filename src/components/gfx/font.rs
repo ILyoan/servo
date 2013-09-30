@@ -467,17 +467,24 @@ impl Font {
                 Some(v) => v,
                 None => {
                     //printfln!("shape_char - cache miss: %?", *ch)
-                    let mut glyphs = GlyphStore::new(1, char::is_whitespace(ch));
-                    shaper.shape_text(str::from_char(ch), &mut glyphs);
-                    self.shape_char_cache[ch as uint] = Some(glyphs.entry_buffer[0].clone());
-                    glyphs.entry_buffer[0]
+                    let glyph_entry = match self.glyph_index(ch) {
+                        Some(index) => {
+                            let advance_x = Au::from_frac_px(self.glyph_h_advance(index));
+                            GlyphEntry::simple(index, advance_x)
+                        }
+                        None => {
+                            GlyphEntry::missing(1)
+                        }
+                    };            
+                    self.shape_char_cache[ch as uint] = Some(glyph_entry);
+                    glyph_entry
                 }
             }
         //}
     }
 
     pub fn shape_text(@mut self, text: ~str, is_whitespace: bool) -> Arc<GlyphStore> {
-        do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
+        //do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
             let shaper = self.get_shaper();
             do self.shape_cache.find_or_create(&text) |txt| {
                 //printfln!("shape_text - cache miss: %?", *txt)
@@ -485,7 +492,7 @@ impl Font {
                 shaper.shape_text(*txt, &mut glyphs);
                 Arc::new(glyphs)
             }
-        }
+        //}
     }
 
     pub fn get_descriptor(&self) -> FontDescriptor {
