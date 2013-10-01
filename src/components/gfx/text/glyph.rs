@@ -418,6 +418,7 @@ impl<'self> DetailedGlyphStore {
 
 // This struct is used by GlyphStore clients to provide new glyph data.
 // It should be allocated on the stack and passed by reference to GlyphStore.
+#[deriving(Clone)]
 pub struct GlyphData {
     index: GlyphIndex,
     advance: Au,

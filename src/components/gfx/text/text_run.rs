@@ -170,7 +170,7 @@ impl<'self> TextRun {
                 let slice = text.slice(byte_last_boundary, byte_i).to_owned();
                 debug!("creating glyph store for slice %? (ws? %?), %? - %? in run %?",
                         slice, !cur_slice_is_whitespace, byte_last_boundary, byte_i, text);
-                glyphs.push(font.shape_text(slice, !cur_slice_is_whitespace));
+                glyphs.push(font.shape_text_fast(slice, !cur_slice_is_whitespace));                
                 byte_last_boundary = byte_i;
             }
 
@@ -182,7 +182,7 @@ impl<'self> TextRun {
             let slice = text.slice(byte_last_boundary, text.len()).to_owned();
             debug!("creating glyph store for final slice %? (ws? %?), %? - %? in run %?",
                 slice, cur_slice_is_whitespace, byte_last_boundary, text.len(), text);
-            glyphs.push(font.shape_text(slice, cur_slice_is_whitespace));
+            glyphs.push(font.shape_text_fast(slice, cur_slice_is_whitespace));
         }
 
         glyphs

@@ -14,7 +14,7 @@ use std::ptr;
 use std::str;
 use std::vec;
 use servo_util::cache::{Cache, HashCache};
-use text::glyph::{GlyphStore, GlyphIndex};
+use text::glyph::{GlyphStore, GlyphIndex, GlyphData};
 use text::shaping::ShaperMethods;
 use text::{Shaper, TextRun};
 use extra::arc::Arc;
@@ -244,6 +244,8 @@ pub struct Font {
     backend: BackendType,
     profiler_chan: ProfilerChan,
     shape_cache: HashCache<~str, Arc<GlyphStore>>,
+    shape_cache_fast: HashCache<char, GlyphData>,
+    shape_cache_fast2: ~[Option<GlyphData>],
 }
 
 impl Font {
@@ -272,6 +274,8 @@ impl Font {
             backend: backend,
             profiler_chan: profiler_chan,
             shape_cache: HashCache::new(),
+            shape_cache_fast: HashCache::new(),
+            shape_cache_fast2: vec::from_elem(256, None),
         });
     }
 
@@ -289,6 +293,8 @@ impl Font {
             backend: backend,
             profiler_chan: profiler_chan,
             shape_cache: HashCache::new(),
+            shape_cache_fast: HashCache::new(),
+            shape_cache_fast2: vec::from_elem(256, None),
         }
     }
 
@@ -453,6 +459,46 @@ impl Font {
             advance = advance + glyph.advance();
         }
         RunMetrics::new(advance, self.metrics.ascent, self.metrics.descent)
+    }
+
+    fn shape_char(@mut self, ch: char) -> GlyphData {
+        let cached = if (ch as uint) < 256 {
+            self.shape_cache_fast2[ch as uint]
+        } else {
+            self.shape_cache_fast.find(&ch)
+        };
+        match cached {
+            Some(v) => v,
+            None => {
+                let glyph_data = match self.glyph_index(ch) {
+                    Some(index) => {
+                        let advance = Au::from_frac_px(self.glyph_h_advance(index));
+                        GlyphData::new(index, advance, None, false, true, true)                            
+                    }
+                    None => {
+                        GlyphData::new(0, Au(0), None, true, true, true)
+                    }
+                };
+
+                if (ch as uint) < 256 {
+                    self.shape_cache_fast2[ch as uint] = Some(glyph_data);
+                } else {
+                    self.shape_cache_fast.insert(ch, glyph_data);
+                }
+
+                glyph_data
+            }
+        }
+    }
+
+    pub fn shape_text_fast(@mut self, text: &str, is_whitespace: bool) -> Arc<GlyphStore> {
+        do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
+            let mut glyphs = GlyphStore::new(text.char_len(), is_whitespace);
+            for (i, ch) in text.iter().enumerate() {
+                glyphs.add_glyph_for_char_index(i, &self.shape_char(ch));
+            }
+            Arc::new(glyphs)
+        }
     }
 
     pub fn shape_text(@mut self, text: ~str, is_whitespace: bool) -> Arc<GlyphStore> {
