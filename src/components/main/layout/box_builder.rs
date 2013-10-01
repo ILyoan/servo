@@ -30,6 +30,8 @@ use script::dom::node::{ElementNodeTypeId, LayoutView, TextNodeTypeId};
 use servo_util::range::Range;
 use servo_util::tree::{TreeNodeRef, TreeNode};
 use std::cell::Cell;
+use std::io;
+use extra::time::precise_time_ns;
 
 pub struct LayoutTreeBuilder {
     next_cid: int,
@@ -618,11 +620,15 @@ impl LayoutTreeBuilder {
         debug!("Constructing flow tree for DOM: ");
         root.dump();
 
+        let s = precise_time_ns();
         let mut new_flow = self.make_flow(Flow_Root, root);
         {
             let new_generator = BoxGenerator::new(&mut new_flow);
             self.construct_recursively(layout_ctx, root, None, new_generator, None);
         }
+        let e = precise_time_ns();
+        let ms = (e - s) as float / 1000000f;
+        io::println(fmt!("construct flow tree: %?", ms));
         return Ok(new_flow)
     }
 
