@@ -10,9 +10,7 @@ use std::str::eq_slice;
 use newcss::select::SelectHandler;
 use script::dom::node::{AbstractNode, LayoutView};
 
-pub struct NodeSelectHandler {
-    node: AbstractNode<LayoutView>,
-}
+pub struct NodeSelectHandler; 
 
 fn with_node_name<R>(node: AbstractNode<LayoutView>, f: &fn(&str) -> R) -> R {
     if !node.is_element() {
@@ -92,10 +90,11 @@ impl SelectHandler<AbstractNode<LayoutView>> for NodeSelectHandler {
         }
     }
 
-    fn node_has_class(&self, node: &AbstractNode<LayoutView>, class: &str) -> bool {
+    fn node_has_class(&mut self, node: &AbstractNode<LayoutView>, class: &str) -> bool {
         if !node.is_element() {
             fail!(~"attempting to style non-element node");
         }
+        debug!("node_has_class - %?, %?", node, class);
         do node.with_imm_element |element_n| {
             match element_n.get_attr("class") {
                 None => false,

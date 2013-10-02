@@ -857,3 +857,10 @@ impl AbstractNode<LayoutView> {
         }
     }
 }
+
+impl<View> IterBytes for AbstractNode<View> {
+    #[inline]
+    fn iter_bytes(&self, lsb0: bool, f: &fn(buf: &[u8]) -> bool) -> bool {
+        self.obj.iter_bytes(lsb0, f)
+    }
+}

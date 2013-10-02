@@ -7,6 +7,7 @@
 
 use css::matching::MatchMethods;
 use css::select::new_css_select_ctx;
+use css::select_handler::NodeSelectHandler;
 use layout::aux::LayoutAuxMethods;
 use layout::box_builder::LayoutTreeBuilder;
 use layout::context::LayoutContext;
@@ -28,6 +29,7 @@ use gfx::opts::Opts;
 use gfx::render_task::{RenderMsg, RenderChan, RenderLayer};
 use gfx::render_task;
 use newcss::select::SelectCtx;
+use newcss::select::SelectHandler;
 use newcss::stylesheet::Stylesheet;
 use newcss::types::OriginAuthor;
 use script::dom::event::ReflowEvent;
@@ -48,6 +50,9 @@ use servo_util::time;
 use servo_util::range::Range;
 use extra::url::Url;
 
+use std::io;
+use extra::time::precise_time_ns;
+
 struct LayoutTask {
     id: PipelineId,
     port: Port<Msg>,
@@ -62,7 +67,7 @@ struct LayoutTask {
 
     display_list: Option<Arc<DisplayList<AbstractNode<()>>>>,
 
-    css_select_ctx: @mut SelectCtx,
+    css_select_ctx: @mut SelectCtx<AbstractNode<LayoutView>, NodeSelectHandler>,
     profiler_chan: ProfilerChan,
 }
 
@@ -216,9 +221,13 @@ impl LayoutTask {
         // Perform CSS selector matching if necessary.
         match data.damage.level {
             ReflowDocumentDamage => {}
-            MatchSelectorsDocumentDamage => {
+            MatchSelectorsDocumentDamage => {                
                 do profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone()) {
+                    let s = precise_time_ns();                    
                     node.restyle_subtree(self.css_select_ctx);
+                    let e = precise_time_ns();
+                    let ms = (e - s) as float / 1000000f;
+                    io::println(fmt!("restyle: %?", ms));
                 }
             }
         }

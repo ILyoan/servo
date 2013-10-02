@@ -8,9 +8,12 @@ use newcss::stylesheet::Stylesheet;
 use newcss::select::SelectCtx;
 use newcss::types::OriginUA;
 use newcss::util::DataStream;
+use css::select_handler::NodeSelectHandler;
+use script::dom::node::{AbstractNode, LayoutView};
 
-pub fn new_css_select_ctx() -> SelectCtx {
-    let mut ctx = SelectCtx::new();
+pub fn new_css_select_ctx() -> SelectCtx<AbstractNode<LayoutView>, NodeSelectHandler> {
+    let select_handler = NodeSelectHandler;
+    let mut ctx = SelectCtx::<AbstractNode<LayoutView>, NodeSelectHandler>::new(select_handler);
     ctx.append_sheet(html4_default_style(), OriginUA);
     ctx.append_sheet(servo_default_style(), OriginUA);
     return ctx;
