@@ -246,6 +246,8 @@ pub struct Font {
     shape_cache: HashCache<~str, Arc<GlyphStore>>,
     shape_cache_fast: HashCache<char, GlyphData>,
     shape_cache_fast2: ~[Option<GlyphData>],
+    glyph_index_cache: HashCache<char, Option<GlyphIndex>>,
+    glyph_advance_cache: HashCache<GlyphIndex, FractionalPixel>,
 }
 
 impl Font {
@@ -276,6 +278,8 @@ impl Font {
             shape_cache: HashCache::new(),
             shape_cache_fast: HashCache::new(),
             shape_cache_fast2: vec::from_elem(256, None),
+            glyph_index_cache: HashCache::new(),
+            glyph_advance_cache: HashCache::new(),
         });
     }
 
@@ -295,6 +299,8 @@ impl Font {
             shape_cache: HashCache::new(),
             shape_cache_fast: HashCache::new(),
             shape_cache_fast2: vec::from_elem(256, None),
+            glyph_index_cache: HashCache::new(),
+            glyph_advance_cache: HashCache::new(),
         }
     }
 
@@ -516,14 +522,18 @@ impl Font {
         FontDescriptor::new(self.style.clone(), SelectorPlatformIdentifier(self.handle.face_identifier()))
     }
 
-    pub fn glyph_index(&self, codepoint: char) -> Option<GlyphIndex> {
-        self.handle.glyph_index(codepoint)
+    pub fn glyph_index(&mut self, codepoint: char) -> Option<GlyphIndex> {
+        do self.glyph_index_cache.find_or_create(&codepoint) |codepoint| {
+            self.handle.glyph_index(*codepoint)
+        }
     }
 
-    pub fn glyph_h_advance(&self, glyph: GlyphIndex) -> FractionalPixel {
-        match self.handle.glyph_h_advance(glyph) {
-          Some(adv) => adv,
-          None => /* FIXME: Need fallback strategy */ 10f as FractionalPixel
+    pub fn glyph_h_advance(&mut self, glyph: GlyphIndex) -> FractionalPixel {
+        do self.glyph_advance_cache.find_or_create(&glyph) |glyph| {
+            match self.handle.glyph_h_advance(*glyph) {
+              Some(adv) => adv,
+              None => /* FIXME: Need fallback strategy */ 10f as FractionalPixel
+            }
         }
     }
 }

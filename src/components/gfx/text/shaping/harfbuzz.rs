@@ -490,10 +490,9 @@ extern fn glyph_func(_: *hb_font_t,
                      glyph: *mut hb_codepoint_t,
                      _: *c_void)
                   -> hb_bool_t {
-    let font: *Font = font_data as *Font;
-    assert!(font.is_not_null());
-
     unsafe {
+        let font: *mut Font = transmute(font_data);
+        assert!(font.is_not_null());
         match (*font).glyph_index(char::from_u32(unicode).unwrap()) {
             Some(g) => {
                 *glyph = g as hb_codepoint_t;
@@ -509,10 +508,9 @@ extern fn glyph_h_advance_func(_: *hb_font_t,
                                glyph: hb_codepoint_t,
                                _: *c_void)
                             -> hb_position_t {
-    let font: *Font = font_data as *Font;
-    assert!(font.is_not_null());
-
     unsafe {
+        let font: *mut Font = transmute(font_data);
+        assert!(font.is_not_null());
         let advance = (*font).glyph_h_advance(glyph as GlyphIndex);
         Shaper::float_to_fixed(advance)
     }
