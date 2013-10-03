@@ -181,11 +181,11 @@ pub fn profile<T>(category: ProfilerCategory,
                   profiler_chan: ProfilerChan,
                   callback: &fn() -> T)
                   -> T {
-    let start_time = precise_time_ns();
+//    let start_time = precise_time_ns();
     let val = callback();
-    let end_time = precise_time_ns();
+/*    let end_time = precise_time_ns();
     let ms = ((end_time - start_time) as float / 1000000f);
-    profiler_chan.send(TimeMsg(category, ms));
+    profiler_chan.send(TimeMsg(category, ms));*/
     return val;
 }
 
