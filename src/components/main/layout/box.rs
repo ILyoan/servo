@@ -40,6 +40,8 @@ use servo_net::local_image_cache::LocalImageCache;
 use servo_util::range::*;
 use extra::url::Url;
 
+use script::style::properties::{ComputedValues};
+
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
 /// the specification:
@@ -595,6 +597,12 @@ impl RenderBox {
     pub fn style(&self) -> CompleteStyle {
         self.with_base(|base| base.node.style())
     }
+
+    // ryanc
+    pub fn style_sapin(&self) -> &ComputedValues {
+        self.with_base(|base| base.node.style_sapin())
+    }
+
 
     /// A convenience function to access the DOM node that this render box represents.
     pub fn node(&self) -> AbstractNode<LayoutView> {

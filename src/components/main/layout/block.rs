@@ -72,7 +72,7 @@ impl BlockLayout for FlowContext {
     fn starts_block_flow(&self) -> bool {
         match *self {
             BlockFlow(*) | InlineBlockFlow(*) | FloatFlow(*) => true,
-            _ => false 
+            _ => false
         }
     }
 }
@@ -115,13 +115,13 @@ impl BlockFlowData {
         self.common.pref_width = pref_width;
         self.common.num_floats = num_floats;
     }
- 
+
     /// Computes left and right margins and width based on CSS 2.1 secion 10.3.3.
     /// Requires borders and padding to already be computed
     fn compute_horiz( &self,
-                            width: MaybeAuto, 
-                            left_margin: MaybeAuto, 
-                            right_margin: MaybeAuto, 
+                            width: MaybeAuto,
+                            left_margin: MaybeAuto,
+                            right_margin: MaybeAuto,
                             available_width: Au) -> (Au, Au, Au) {
 
         //If width is not 'auto', and width + margins > available_width, all 'auto' margins are treated as '0'
@@ -130,7 +130,7 @@ impl BlockFlowData {
             Specified(width) => {
                 let left = left_margin.specified_or_zero();
                 let right = right_margin.specified_or_zero();
-                
+
                 if((left + right + width) > available_width) {
                     (Specified(left), Specified(right))
                 } else {
@@ -142,7 +142,7 @@ impl BlockFlowData {
         //Invariant: left_margin_Au + width_Au + right_margin_Au == available_width
         let (left_margin_Au, width_Au, right_margin_Au) = match (left_margin, width, right_margin) {
             //If all have a computed value other than 'auto', the system is over-constrained and we need to discard a margin.
-            //if direction is ltr, ignore the specified right margin and solve for it. If it is rtl, ignore the specified 
+            //if direction is ltr, ignore the specified right margin and solve for it. If it is rtl, ignore the specified
             //left margin. FIXME(eatkinson): this assumes the direction is ltr
             (Specified(margin_l), Specified(width), Specified(_margin_r)) => (margin_l, width, available_width - (margin_l + width )),
 
@@ -172,7 +172,7 @@ impl BlockFlowData {
     ///
     /// Dual boxes consume some width first, and the remainder is assigned to all child (block)
     /// contexts.
-    pub fn assign_widths_block(&mut self, ctx: &LayoutContext) { 
+    pub fn assign_widths_block(&mut self, ctx: &LayoutContext) {
         debug!("assign_widths_block: assigning width for flow %?",  self.common.id);
         if self.is_root {
             debug!("Setting root position");
@@ -188,6 +188,9 @@ impl BlockFlowData {
 
         for &box in self.box.iter() {
             let style = box.style();
+
+            // printfln!("box.style_sapin: %?", box.style_sapin());
+
             do box.with_model |model| {
                 //Can compute border width here since it doesn't depend on anything
                 model.compute_borders(style);
@@ -340,7 +343,7 @@ impl BlockFlowData {
                             // The top margin collapses with its first in-flow block-level child's
                             // top margin if the parent has no top boder, no top padding.
                             if first_inflow && top_margin_collapsible {
-                                // If top-margin of parent is less than top-margin of its first child, 
+                                // If top-margin of parent is less than top-margin of its first child,
                                 // the parent box goes down until its top is aligned with the child.
                                 if margin_top < model.margin.top {
                                     // TODO: The position of child floats should be updated and this
@@ -350,7 +353,7 @@ impl BlockFlowData {
                                     margin_top = model.margin.top;
                                 }
                             }
-                            // The bottom margin of an in-flow block-level element collapses 
+                            // The bottom margin of an in-flow block-level element collapses
                             // with the top margin of its next in-flow block-level sibling.
                             collapsing = geometry::min(model.margin.top, collapsible);
                             collapsible = model.margin.bottom;
@@ -389,7 +392,7 @@ impl BlockFlowData {
         } else {
             Au(0)
         };
-        
+
         // TODO: A box's own margins collapse if the 'min-height' property is zero, and it has neither
         // top or bottom borders nor top or bottom padding, and it has a 'height' of either 0 or 'auto',
         // and it does not contain a line box, and all of its in-flow children's margins (if any) collapse.
@@ -430,7 +433,7 @@ impl BlockFlowData {
         self.common.position.size.height = height + noncontent_height;
 
         if inorder {
-            let extra_height = height - (cur_y - top_offset) + bottom_offset; 
+            let extra_height = height - (cur_y - top_offset) + bottom_offset;
             self.common.floats_out = float_ctx.translate(Point2D(left_offset, -extra_height));
         } else {
             self.common.floats_out = self.common.floats_in.clone();
@@ -439,8 +442,8 @@ impl BlockFlowData {
 
     pub fn build_display_list_block<E:ExtraDisplayListData>(&mut self,
                                                             builder: &DisplayListBuilder,
-                                                            dirty: &Rect<Au>, 
-                                                            list: &Cell<DisplayList<E>>) 
+                                                            dirty: &Rect<Au>,
+                                                            list: &Cell<DisplayList<E>>)
                                                             -> bool {
 
         if self.common.node.is_iframe_element() {

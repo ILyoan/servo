@@ -862,4 +862,13 @@ impl AbstractNode<LayoutView> {
             blk(&mut b.layout_data)
         }
     }
+
+    pub fn style_sapin(self) -> &ComputedValues {
+        do self.read_layout_data |layout_data| {
+            match layout_data.style_sapin {
+                None => fail!(~"style_sapin() called on node without a style"),
+                Some(ref s) => unsafe { cast::transmute_region(s)}
+            }
+        }
+    }
 }
