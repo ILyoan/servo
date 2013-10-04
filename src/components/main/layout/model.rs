@@ -15,6 +15,10 @@ use newcss::values::{CSSWidth, CSSWidthLength, CSSWidthPercentage, CSSWidthAuto}
 use newcss::values::{CSSHeight, CSSHeightLength, CSSHeightPercentage, CSSHeightAuto};
 use newcss::values::{CSSMargin, CSSMarginLength, CSSMarginPercentage, CSSMarginAuto};
 use newcss::values::{CSSPadding, CSSPaddingLength, CSSPaddingPercentage};
+
+use script::style::properties::{ComputedValues};
+use script::style::properties::common_types::{computed};
+
 /// Encapsulates the borders, padding, and margins, which we collectively call the "box model".
 pub struct BoxModel {
     border: SideOffsets2D<Au>,
@@ -104,11 +108,25 @@ impl BoxModel {
         self.border.left = self.compute_border_width(style.border_left_width(), style.font_size());
     }
 
+    pub fn compute_borders_sapin(&mut self, style: &ComputedValues) {
+        self.border.top = self.compute_border_width_sapin(style.Border.border_top_width, style.Font.font_size);
+        self.border.right = self.compute_border_width_sapin(style.Border.border_right_width, style.Font.font_size);
+        self.border.bottom = self.compute_border_width_sapin(style.Border.border_bottom_width, style.Font.font_size);
+        self.border.left = self.compute_border_width_sapin(style.Border.border_left_width, style.Font.font_size);
+    }
+
     pub fn compute_padding(&mut self, style: CompleteStyle, containing_width: Au) {
         self.padding.top = self.compute_padding_length(style.padding_top(), containing_width, style.font_size());
         self.padding.right = self.compute_padding_length(style.padding_right(), containing_width, style.font_size());
         self.padding.bottom = self.compute_padding_length(style.padding_bottom(), containing_width, style.font_size());
         self.padding.left = self.compute_padding_length(style.padding_left(), containing_width, style.font_size());
+    }
+
+    pub fn compute_padding_sapin(&mut self, style: &ComputedValues, containing_width: Au) {
+        self.padding.top = self.compute_padding_length_sapin(style.Padding.padding_top, containing_width, style.Font.font_size);
+        self.padding.right = self.compute_padding_length_sapin(style.Padding.padding_right, containing_width, style.Font.font_size);
+        self.padding.bottom = self.compute_padding_length_sapin(style.Padding.padding_bottom, containing_width, style.Font.font_size);
+        self.padding.left = self.compute_padding_length_sapin(style.Padding.padding_left, containing_width, style.Font.font_size);
     }
 
     pub fn noncontent_width(&self) -> Au {
@@ -137,10 +155,26 @@ impl BoxModel {
         }
     }
 
+    pub fn compute_border_width_sapin(&self, width: computed::Length, font_size: computed::Length) -> Au {
+        match width {
+            computed::Length(length) => Au::from_frac_px(length as float),
+        }
+    }
+
     pub fn compute_padding_length(&self, padding: CSSPadding, content_box_width: Au, font_size: CSSFontSize) -> Au {
         match padding {
             CSSPaddingLength(length) => from_length(length, font_size),
             CSSPaddingPercentage(p) => content_box_width.scale_by(p/100.0)
+        }
+    }
+
+    pub fn compute_padding_length_sapin(&self, padding: computed::LengthOrPercentage, content_box_width: Au, font_size: computed::Length) -> Au {
+        match padding {
+            computed::LP_Length(computed::Length(length)) => Au::from_frac_px(length as float),
+            _ => {
+                error!("Need to cover LP_Percentage")
+                    Au::from_frac_px(1f)
+            }
         }
     }
 }

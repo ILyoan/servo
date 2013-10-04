@@ -189,14 +189,16 @@ impl BlockFlowData {
         for &box in self.box.iter() {
             let style = box.style();
 
-            // printfln!("box.style_sapin: %?", box.style_sapin());
+            let style_sapin = box.style_sapin();
 
             do box.with_model |model| {
                 //Can compute border width here since it doesn't depend on anything
                 model.compute_borders(style);
+                model.compute_borders_sapin(style_sapin);
 
                 // Can compute padding here since we know containing block width.
                 model.compute_padding(style, remaining_width);
+                model.compute_padding_sapin(style_sapin, remaining_width);
 
                 // Margins are 0 right now so model.noncontent_width() is just borders + padding.
                 let available_width = remaining_width - model.noncontent_width();

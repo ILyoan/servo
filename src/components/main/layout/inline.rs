@@ -22,13 +22,15 @@ use newcss::units::{Em, Px};
 use newcss::values::{CSSFontSizeLength};
 use newcss::values::{CSSTextAlignLeft, CSSTextAlignCenter, CSSTextAlignRight, CSSTextAlignJustify};
 use newcss::values::{CSSLineHeightNormal, CSSLineHeightNumber, CSSLineHeightLength, CSSLineHeightPercentage};
-use newcss::values::{CSSVerticalAlignBaseline, CSSVerticalAlignMiddle, CSSVerticalAlignSub, CSSVerticalAlignSuper, 
-                     CSSVerticalAlignTextTop, CSSVerticalAlignTextBottom, CSSVerticalAlignTop, CSSVerticalAlignBottom, 
+use newcss::values::{CSSVerticalAlignBaseline, CSSVerticalAlignMiddle, CSSVerticalAlignSub, CSSVerticalAlignSuper,
+                     CSSVerticalAlignTextTop, CSSVerticalAlignTextBottom, CSSVerticalAlignTop, CSSVerticalAlignBottom,
                      CSSVerticalAlignLength, CSSVerticalAlignPercentage};
 use servo_util::range::Range;
 use servo_util::tree::TreeNodeRef;
 use extra::container::Deque;
 use extra::ringbuf::RingBuf;
+
+use script::style::properties::common_types::{computed};
 
 /*
 Lineboxes are represented as offsets into the child list, rather than
@@ -80,15 +82,15 @@ impl LineboxScanner {
             new_boxes: ~[],
             work_list: @mut RingBuf::new(),
             pending_line: LineBox {
-                range: Range::empty(), 
-                bounds: Rect(Point2D(Au(0), Au(0)), Size2D(Au(0), Au(0))), 
+                range: Range::empty(),
+                bounds: Rect(Point2D(Au(0), Au(0)), Size2D(Au(0), Au(0))),
                 green_zone: Size2D(Au(0), Au(0))
             },
             lines: ~[],
             cur_y: Au(0)
         }
     }
-    
+
     pub fn floats_out(&mut self) -> FloatContext {
         self.floats.clone()
     }
@@ -104,7 +106,7 @@ impl LineboxScanner {
     fn reset_linebox(&mut self) {
         self.pending_line.range.reset(0,0);
         self.pending_line.bounds = Rect(Point2D(Au(0), self.cur_y), Size2D(Au(0), Au(0)));
-        self.pending_line.green_zone = Size2D(Au(0), Au(0))     
+        self.pending_line.green_zone = Size2D(Au(0), Au(0))
     }
 
     pub fn scan_for_lines(&mut self, flow: &mut InlineFlowData) {
@@ -169,7 +171,7 @@ impl LineboxScanner {
         self.reset_linebox();
     }
 
-    fn calculate_line_height(&self, box: RenderBox, font_size: Au) -> Au { 
+    fn calculate_line_height(&self, box: RenderBox, font_size: Au) -> Au {
         match box.line_height() {
             CSSLineHeightNormal => font_size.scale_by(1.14f),
             CSSLineHeightNumber(l) => font_size.scale_by(l),
@@ -248,7 +250,7 @@ impl LineboxScanner {
         let line_bounds = self.floats.place_between_floats(&info);
 
         debug!("LineboxScanner: found position for line: %? using placement_info: %?", line_bounds, info);
-        
+
         // Simple case: if the box fits, then we can stop here
         if line_bounds.size.width > first_box.position().size.width {
             debug!("LineboxScanner: case=box fits");
@@ -303,7 +305,7 @@ impl LineboxScanner {
                 return (new_bounds, actual_box_width);
             }
         }
-        
+
     }
 
     /// Returns false only if we should break the line.
@@ -456,7 +458,7 @@ impl LineboxScanner {
         }
         self.pending_line.range.extend_by(1);
         self.pending_line.bounds.size.width = self.pending_line.bounds.size.width + box.position().size.width;
-        self.pending_line.bounds.size.height = Au::max(self.pending_line.bounds.size.height, 
+        self.pending_line.bounds.size.height = Au::max(self.pending_line.bounds.size.height,
                                                              box.position().size.height);
         self.new_boxes.push(box);
     }
@@ -704,7 +706,7 @@ impl InlineFlowData {
                     TextRenderBoxClass(text_box) => {
                         let range = &text_box.range;
                         let run = &text_box.run;
-                        
+
                         // Compute the height based on the line-height and font size
                         let text_bounds = run.metrics_for_range(range).bounding_box;
                         let em_size = text_bounds.size.height;
@@ -713,7 +715,7 @@ impl InlineFlowData {
                         // Find the top and bottom of the content area.
                         // Those are used in text-top and text-bottom value of 'vertical-align'
                         let text_ascent = text_box.run.font.metrics.ascent;
-                       
+
                         // Offset from the top of the box is 1/2 of the leading + ascent
                         let text_offset = text_ascent + (line_height - em_size).scale_by(0.5f);
                         text_bounds.translate(&Point2D(text_box.base.position.origin.x, Au(0)));
@@ -734,7 +736,7 @@ impl InlineFlowData {
 
                 // To calculate text-top and text-bottom value of 'vertical-align',
                 //  we should find the top and bottom of the content area of parent box.
-                // The content area is defined in "http://www.w3.org/TR/CSS2/visudet.html#inline-non-replaced". 
+                // The content area is defined in "http://www.w3.org/TR/CSS2/visudet.html#inline-non-replaced".
                 // TODO: We should extract em-box info from font size of parent
                 //  and calcuate the distances from baseline to the top and the bottom of parent's content area.
 
@@ -748,11 +750,20 @@ impl InlineFlowData {
                     // Get parent node
                     let parent = base.node.parent_node().map_default(base.node, |parent| *parent);
                     // TODO: When the calculation of font-size style is supported, it should be updated.
+
+
+                    // ryanc: replacing this line
+                    /*
                     let font_size = match parent.style().font_size() {
                         CSSFontSizeLength(Px(length)) => length,
                         // todo: this is based on a hard coded font size, should be the parent element's font size
-                        CSSFontSizeLength(Em(length)) => length * 16f, 
+                        CSSFontSizeLength(Em(length)) => length * 16f,
                         _ => 16f // px units
+                    };
+                    */
+                    // adding sapin's style
+                    let font_size = match parent.style_sapin().Font.font_size {
+                        computed::Length(length) => length as float,
                     };
                     parent_text_top = Au::from_frac_px(font_size);
                 }
@@ -820,7 +831,7 @@ impl InlineFlowData {
                         -(length_offset + ascent)
                     },
                     CSSVerticalAlignPercentage(p) => {
-                        let pt_size = cur_box.font_style().pt_size; 
+                        let pt_size = cur_box.font_style().pt_size;
                         let line_height = scanner.calculate_line_height(cur_box, Au::from_pt(pt_size));
                         let percent_offset = line_height.scale_by(p / 100.0f);
                         -(percent_offset + ascent)
@@ -883,14 +894,14 @@ impl InlineFlowData {
             line.bounds.size.height = topmost + bottommost;
         } // End of `lines.each` loop.
 
-        self.common.position.size.height = 
+        self.common.position.size.height =
             if self.lines.len() > 0 {
                 self.lines.last().bounds.origin.y + self.lines.last().bounds.size.height
             } else {
                 Au(0)
             };
 
-        self.common.floats_out = scanner.floats_out().translate(Point2D(Au(0), 
+        self.common.floats_out = scanner.floats_out().translate(Point2D(Au(0),
                                                                 -self.common.position.size.height));
     }
 
@@ -922,7 +933,7 @@ impl InlineFlowData {
 
         // TODO(#225): Should `inline-block` elements have flows as children of the inline flow or
         // should the flow be nested inside the box somehow?
-        
+
         // For now, don't traverse the subtree rooted here
         true
     }
