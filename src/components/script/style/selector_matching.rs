@@ -9,9 +9,10 @@ use style::selectors::*;
 use style::stylesheets::parse_stylesheet;
 use style::media_queries::{Device, Screen};
 use style::properties::{ComputedValues, cascade, PropertyDeclaration};
-use dom::node::{AbstractNode, ScriptView};
+use dom::node::{AbstractNode, LayoutView};
 use dom::element::Element;
 
+use std::cell::Cell;
 
 pub enum StylesheetOrigin {
     UserAgentOrigin,
@@ -77,10 +78,9 @@ impl Stylist {
         }
     }
 
-    pub fn get_computed_style(&self, element: AbstractNode<ScriptView>,
+    pub fn get_computed_style(&self, element: AbstractNode<LayoutView>,
                               parent_style: Option<&ComputedValues>,
-                              pseudo_element: Option<PseudoElement>)
-                              -> ComputedValues {
+                              pseudo_element: Option<PseudoElement>) {
         assert!(element.is_element())
         // Only the root does not inherit.
         // The root has no parent or a non-element parent.
@@ -112,7 +112,20 @@ impl Stylist {
         append!(self.user_rules.important);
         append!(self.ua_rules.important);
 
-        cascade(applicable_declarations, parent_style)
+        let computed_values = cascade(applicable_declarations, parent_style);
+
+        // do element.with_imm_element |elem| {
+            // printfln!("%?: %?", elem.tag_name, computed_values);
+        // }
+
+        for child in element.children() {
+            if child.is_element() {
+                self.get_computed_style(child, Some(&computed_values), None);
+            }
+        }
+
+        let cell = Cell::new(computed_values);
+        element.write_layout_data(|data| data.style_sapin = Some(cell.take()));
     }
 }
 
@@ -145,7 +158,7 @@ impl Ord for Rule {
 
 
 #[inline]
-fn matches_selector(selector: &Selector, element: AbstractNode<ScriptView>,
+fn matches_selector(selector: &Selector, element: AbstractNode<LayoutView>,
                     pseudo_element: Option<PseudoElement>) -> bool {
     selector.pseudo_element == pseudo_element &&
     matches_compound_selector(&selector.compound_selectors, element)
@@ -153,7 +166,7 @@ fn matches_selector(selector: &Selector, element: AbstractNode<ScriptView>,
 
 
 fn matches_compound_selector(selector: &CompoundSelector,
-                             element: AbstractNode<ScriptView>) -> bool {
+                             element: AbstractNode<LayoutView>) -> bool {
     if do element.with_imm_element |element| {
         !do selector.simple_selectors.iter().all |simple_selector| {
             matches_simple_selector(simple_selector, element)

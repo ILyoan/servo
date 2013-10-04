@@ -48,6 +48,8 @@ use servo_util::time;
 use servo_util::range::Range;
 use extra::url::Url;
 
+use script::style::selector_matching::{Stylist, AuthorOrigin};
+
 struct LayoutTask {
     id: PipelineId,
     port: Port<Msg>,
@@ -100,7 +102,7 @@ impl LayoutTask {
            port: Port<Msg>,
            constellation_chan: ConstellationChan,
            script_chan: ScriptChan,
-           render_chan: RenderChan<AbstractNode<()>>, 
+           render_chan: RenderChan<AbstractNode<()>>,
            image_cache_task: ImageCacheTask,
            opts: &Opts,
            profiler_chan: ProfilerChan)
@@ -120,7 +122,7 @@ impl LayoutTask {
             screen_size: None,
 
             display_list: None,
-            
+
             css_select_ctx: @mut new_css_select_ctx(),
             profiler_chan: profiler_chan,
         }
@@ -220,6 +222,9 @@ impl LayoutTask {
                 do profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone()) {
                     node.restyle_subtree(self.css_select_ctx);
                 }
+                let mut stylist = Stylist::new();
+                stylist.add_stylesheet(&"p b {color: red;} span {color: blue;}", AuthorOrigin);
+                stylist.get_computed_style(*node, None, None);
             }
         }
 
@@ -283,7 +288,7 @@ impl LayoutTask {
             };
 
             // FIXME: We want to do
-            //     for flow in layout_root.traverse_preorder_prune(|f| f.restyle_damage().lacks(Reflow)) 
+            //     for flow in layout_root.traverse_preorder_prune(|f| f.restyle_damage().lacks(Reflow))
             // but FloatContext values can't be reused, so we need to recompute them every time.
             // NOTE: this currently computes borders, so any pruning should separate that operation out.
             debug!("assigning widths");
@@ -313,8 +318,8 @@ impl LayoutTask {
                 // TODO: Set options on the builder before building.
                 // TODO: Be smarter about what needs painting.
                 let root_pos = &layout_root.position().clone();
-                layout_root.each_preorder_prune(|flow| {  
-                    flow.build_display_list(&builder, root_pos, display_list) 
+                layout_root.each_preorder_prune(|flow| {
+                    flow.build_display_list(&builder, root_pos, display_list)
                 }, |_| { true } );
 
                 let root_size = do layout_root.with_base |base| {
