@@ -292,17 +292,7 @@ impl RenderBox {
                 let mut left_range = Range::new(text_box.range.begin(), 0);
                 let mut right_range: Option<Range> = None;
 
-                debug!("split_to_width: splitting text box (strlen=%u, range=%?, avail_width=%?)",
-                       text_box.run.text.len(),
-                       text_box.range,
-                       max_width);
-
                 for (glyphs, offset, slice_range) in text_box.run.iter_slices_for_range(&text_box.range) {
-                    debug!("split_to_width: considering slice (offset=%?, range=%?, remain_width=%?)",
-                           offset,
-                           slice_range,
-                           remaining_width);
-
                     let metrics = text_box.run.metrics_for_slice(glyphs, &slice_range);
                     let advance = metrics.advance_width;
                     let should_continue: bool;

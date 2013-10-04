@@ -14,7 +14,7 @@ use dom::element::Element;
 use dom::event::{Event_, ResizeEvent, ReflowEvent, ClickEvent, MouseDownEvent, MouseUpEvent};
 use dom::htmldocument::HTMLDocument;
 use dom::window::Window;
-use layout_interface::{AddStylesheetMsg, DocumentDamage};
+use layout_interface::{AddStylesheetMsg, DocumentDamage, AddCSSDataMsg};
 use layout_interface::{DocumentDamageLevel, HitTestQuery, HitTestResponse, LayoutQuery};
 use layout_interface::{LayoutChan, MatchSelectorsDocumentDamage, QueryMsg, Reflow};
 use layout_interface::{ReflowDocumentDamage, ReflowForDisplay, ReflowGoal};
@@ -733,7 +733,9 @@ impl ScriptTask {
                     js_scripts = Some(scripts);
                 }
                 Some(HtmlDiscoveredStyle(sheet)) => {
-                    page.layout_chan.send(AddStylesheetMsg(sheet));
+                    printfln!("HtmlDiscoveredStyle: %?", sheet);
+                    //page.layout_chan.send(AddStylesheetMsg(sheet));
+                    page.layout_chan.send(AddCSSDataMsg(sheet));
                 }
                 Some(HtmlDiscoveredIFrame((iframe_url, subpage_id, size_future, sandboxed))) => {
                     page.next_subpage_id = SubpageId(*subpage_id + 1);

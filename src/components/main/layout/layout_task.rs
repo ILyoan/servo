@@ -31,8 +31,7 @@ use newcss::select::SelectCtx;
 use newcss::stylesheet::Stylesheet;
 use newcss::types::OriginAuthor;
 use script::dom::event::ReflowEvent;
-use script::dom::node::{AbstractNode, LayoutView};
-use script::layout_interface::{AddStylesheetMsg, ContentBoxQuery};
+use script::layout_interface::{AddStylesheetMsg, ContentBoxQuery, AddCSSDataMsg};
 use script::layout_interface::{HitTestQuery, ContentBoxResponse, HitTestResponse};
 use script::layout_interface::{ContentBoxesQuery, ContentBoxesResponse, ExitMsg, LayoutQuery};
 use script::layout_interface::{MatchSelectorsDocumentDamage, Msg};
@@ -50,6 +49,11 @@ use extra::url::Url;
 
 use script::style::selector_matching::{Stylist, AuthorOrigin};
 
+use script::dom::node::{AbstractNode, LayoutView, ScriptView};
+use script::style::selector_matching::*;
+use extra::time::precise_time_ns;
+use script::html::cssparse::CSSData;
+
 struct LayoutTask {
     id: PipelineId,
     port: Port<Msg>,
@@ -66,6 +70,7 @@ struct LayoutTask {
 
     css_select_ctx: @mut SelectCtx,
     profiler_chan: ProfilerChan,
+    css_data: ~str
 }
 
 impl LayoutTask {
@@ -93,7 +98,8 @@ impl LayoutTask {
                                              render_chan.take(),
                                              img_cache_task.take(),
                                              &opts,
-                                             profiler_chan.take());
+                                             profiler_chan.take(),
+                                             ~"");
             layout.start();
         };
     }
@@ -105,7 +111,8 @@ impl LayoutTask {
            render_chan: RenderChan<AbstractNode<()>>,
            image_cache_task: ImageCacheTask,
            opts: &Opts,
-           profiler_chan: ProfilerChan)
+           profiler_chan: ProfilerChan,
+           css_data: ~str)
            -> LayoutTask {
         let fctx = @mut FontContext::new(opts.render_backend, true, profiler_chan.clone());
 
@@ -125,6 +132,7 @@ impl LayoutTask {
 
             css_select_ctx: @mut new_css_select_ctx(),
             profiler_chan: profiler_chan,
+            css_data: css_data
         }
     }
 
@@ -149,7 +157,12 @@ impl LayoutTask {
 
     fn handle_request(&mut self) -> bool {
         match self.port.recv() {
-            AddStylesheetMsg(sheet) => self.handle_add_stylesheet(sheet),
+            AddCSSDataMsg(sheet) => {
+                self.handle_add_stylesheet2(sheet)
+            },
+            AddStylesheetMsg(sheet) => {
+                self.handle_add_stylesheet(sheet)
+            },
             ReflowMsg(data) => {
                 let data = Cell::new(data);
 
@@ -175,9 +188,15 @@ impl LayoutTask {
         true
     }
 
-    fn handle_add_stylesheet(&self, sheet: Stylesheet) {
-        let sheet = Cell::new(sheet);
-        self.css_select_ctx.append_sheet(sheet.take(), OriginAuthor);
+    fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
+        printfln!("handle_add_stylesheet");
+        self.css_select_ctx.append_sheet(sheet, OriginAuthor);
+    }
+
+    fn handle_add_stylesheet2(&mut self, sheet: CSSData) {
+        printfln!("handle_add_stylesheet2");
+        self.css_data = sheet.data.get_ref().clone();
+        self.css_select_ctx.append_sheet(sheet.sheet, OriginAuthor);
     }
 
     /// The high-level routine that performs layout tasks.
@@ -198,7 +217,7 @@ impl LayoutTask {
         // Reset the image cache.
         self.local_image_cache.next_round(self.make_on_image_available_cb(script_chan));
 
-        self.doc_url = Some(doc_url);
+//        self.doc_url = Some(doc_url.clone());
         let screen_size = Size2D(Au::from_px(data.window_size.width as int),
                                  Au::from_px(data.window_size.height as int));
         let resized = self.screen_size != Some(screen_size);
@@ -220,11 +239,22 @@ impl LayoutTask {
             ReflowDocumentDamage => {}
             MatchSelectorsDocumentDamage => {
                 do profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone()) {
+                    let s = precise_time_ns();
                     node.restyle_subtree(self.css_select_ctx);
+                    let e = precise_time_ns();
+                    let ms = ((e - s) as float / 1000000f);
+                    printfln!("1. netsurfcss css match selector : %? ms", ms);
                 }
-                let mut stylist = Stylist::new();
-                stylist.add_stylesheet(&"p b {color: red;} span {color: blue;}", AuthorOrigin);
-                stylist.get_computed_style(*node, None, None);
+
+                let mut style = Stylist::new();
+                printfln!("css data: %?", self.css_data);
+                //style.add_stylesheet(&"p {color: red;} h1 {color: blue;}", AuthorOrigin);
+                style.add_stylesheet(self.css_data, AuthorOrigin);
+                let s = precise_time_ns();
+                style.get_computed_style(*node, None, None);
+                let e = precise_time_ns();
+                let ms = ((e - s) as float / 1000000f);
+                printfln!("2. simon`s css match selector    : %? ms", ms);
             }
         }
 

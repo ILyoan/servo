@@ -15,6 +15,7 @@ use geom::point::Point2D;
 use gfx::geometry::Au;
 use newcss::stylesheet::Stylesheet;
 use extra::url::Url;
+use html::cssparse::CSSData;
 
 /// Asynchronous messages that script can send to layout.
 ///
@@ -22,6 +23,7 @@ use extra::url::Url;
 pub enum Msg {
     /// Adds the given stylesheet to the document.
     AddStylesheetMsg(Stylesheet),
+    AddCSSDataMsg(CSSData),
 
     /// Requests a reflow.
     ReflowMsg(~Reflow),
