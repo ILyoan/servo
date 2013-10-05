@@ -155,7 +155,7 @@ impl BoxModel {
         }
     }
 
-    pub fn compute_border_width_sapin(&self, width: computed::Length, font_size: computed::Length) -> Au {
+    pub fn compute_border_width_sapin(&self, width: computed::Length, _font_size: computed::Length) -> Au {
         match width {
             computed::Length(length) => Au::from_frac_px(length as float),
         }
@@ -168,7 +168,7 @@ impl BoxModel {
         }
     }
 
-    pub fn compute_padding_length_sapin(&self, padding: computed::LengthOrPercentage, content_box_width: Au, font_size: computed::Length) -> Au {
+    pub fn compute_padding_length_sapin(&self, padding: computed::LengthOrPercentage, _content_box_width: Au, _font_size: computed::Length) -> Au {
         match padding {
             computed::LP_Length(computed::Length(length)) => Au::from_frac_px(length as float),
             _ => {
