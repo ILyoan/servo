@@ -42,8 +42,9 @@ use servo_net::local_image_cache::LocalImageCache;
 use servo_util::range::*;
 use extra::url::Url;
 
-use script::style::properties::{ComputedValues};
-use script::style::properties::longhands::text_align;
+use script::style::properties::common_types::computed;
+use script::style::properties::ComputedValues;
+use script::style::properties::longhands::{clear, font_family, font_style, line_height, text_align};
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -851,12 +852,21 @@ impl RenderBox {
     }
 
     pub fn clear(&self) -> Option<ClearType> {
+        // Replaced by sonwow
         let style = self.style();
         match style.clear() {
             CSSClearNone => None,
             CSSClearLeft => Some(ClearLeft),
             CSSClearRight => Some(ClearRight),
             CSSClearBoth => Some(ClearBoth)
+        };
+
+        let style = self.style_sapin();
+        match style.Box.clear {
+            clear::none => None,
+            clear::left => Some(ClearLeft),
+            clear::right => Some(ClearRight),
+            clear::both => Some(ClearBoth)
         }
     }
 
@@ -864,6 +874,7 @@ impl RenderBox {
     pub fn font_style(&self) -> FontStyle {
         fn get_font_style(element: AbstractNode<LayoutView>) -> FontStyle {
             let my_style = element.style();
+            let my_style_sapin = element.style_sapin();
 
             debug!("(font style) start: %?", element.type_id());
 
@@ -878,6 +889,13 @@ impl RenderBox {
                     CSSFontFamilyGenericFamily(Monospace)   => ~"monospace",
                 }
             };
+
+            let font_families = do my_style_sapin.Font.font_family.map |family| {
+                match *family {
+                    font_family::FamilyName(ref name) => name.to_str()
+                }
+            };
+
             let font_families = font_families.connect(", ");
             debug!("(font style) font families: `%s`", font_families);
 
@@ -887,12 +905,22 @@ impl RenderBox {
                 CSSFontSizeLength(Em(length)) => length * 16f,
                 _ => 16f // px units
             };
+
+            let font_size = match my_style_sapin.Font.font_size {
+                computed::Length(length) => length as float
+            };
             debug!("(font style) font size: `%fpx`", font_size);
 
             let (italic, oblique) = match my_style.font_style() {
                 CSSFontStyleNormal => (false, false),
                 CSSFontStyleItalic => (true, false),
                 CSSFontStyleOblique => (false, true),
+            };
+
+            let (italic, oblique) = match my_style_sapin.Font.font_style {
+                font_style::normal => (false, false),
+                font_style::italic => (true, false),
+                font_style::oblique => (false, true),
             };
 
             FontStyle {
@@ -934,13 +962,16 @@ impl RenderBox {
         self.nearest_ancestor_element().style().text_align()
     }
 
-//    pub fn text_align_sapin(&self) -> CSSTextAlign {
     pub fn text_align_sapin(&self) -> text_align::SpecifiedValue {
         self.nearest_ancestor_element().style_sapin().Text.text_align
     }
 
     pub fn line_height(&self) -> CSSLineHeight {
         self.nearest_ancestor_element().style().line_height()
+    }
+    
+    pub fn line_height_sapin(&self) -> line_height::ComputedValue {
+        self.nearest_ancestor_element().style_sapin().Box.line_height
     }
 
     pub fn vertical_align(&self) -> CSSVerticalAlign {
