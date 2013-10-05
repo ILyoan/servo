@@ -541,6 +541,12 @@ impl RenderBox {
         }
     }
 
+    pub fn compute_padding_sapin(&self, cb_width: Au) {
+        do self.with_mut_base |base| {
+            base.model.compute_padding_sapin(base.node.style_sapin(), cb_width);
+        }
+    }
+
     pub fn get_noncontent_width(&self) -> Au {
         do self.with_base |base| {
             base.model.border.left + base.model.padding.left +

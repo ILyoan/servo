@@ -173,7 +173,7 @@ impl BoxModel {
             computed::LP_Length(computed::Length(length)) => Au::from_frac_px(length as float),
             _ => {
                 error!("Need to cover LP_Percentage")
-                    Au::from_frac_px(1f)
+                Au::from_frac_px(1f)
             }
         }
     }
