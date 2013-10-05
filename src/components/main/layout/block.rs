@@ -422,8 +422,15 @@ impl BlockFlowData {
 
         for &box in self.box.iter() {
             let style = box.style();
+
+            let style_sapin = box.style_sapin();
+
             let maybe_height = MaybeAuto::from_height(style.height(), Au(0), style.font_size());
             let maybe_height = maybe_height.specified_or_zero();
+
+            let maybe_height = MaybeAuto::from_height_sapin(style_sapin.Box.height, Au(0), style_sapin.Font.font_size);
+            let maybe_height = maybe_height.specified_or_zero();
+
             height = geometry::max(height, maybe_height);
         }
 

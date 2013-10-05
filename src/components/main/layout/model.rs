@@ -95,6 +95,14 @@ impl MaybeAuto {
         }
     }
 
+    pub fn from_height_sapin(height: computed::LengthOrPercentageOrAuto, cb_height: Au, font_size: computed::Length) -> MaybeAuto {
+        match height {
+            computed::LPA_Length(computed::Length(length)) => Specified(Au::from_frac_px(length as float)),
+            computed::LPA_Percentage(value) => Specified(Au::from_frac_px(value as float)),
+            computed::LPA_Auto => Auto
+        }
+    }   
+
     pub fn specified_or_default(&self, default: Au) -> Au {
         match *self {
             Auto => default,
