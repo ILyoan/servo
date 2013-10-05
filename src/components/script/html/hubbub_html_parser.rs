@@ -13,7 +13,7 @@ use html::cssparse::{InlineProvenance, StylesheetProvenance, UrlProvenance, spaw
 use html::cssparse::CSSData;
 
 use js::jsapi::JSContext;
-use newcss::stylesheet::Stylesheet;
+//use newcss::stylesheet::Stylesheet;
 use script_task::page_from_context;
 
 use std::cast;

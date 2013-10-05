@@ -113,11 +113,11 @@ impl Stylist {
         append!(self.ua_rules.important);
 
         let computed_values = cascade(applicable_declarations, parent_style);
-
-        // do element.with_imm_element |elem| {
-            // printfln!("%?: %?", elem.tag_name, computed_values);
-        // }
-
+/*
+        do element.with_imm_element |elem| {
+            printfln!("%?: %?", elem.tag_name, computed_values);
+        }
+*/
         for child in element.children() {
             if child.is_element() {
                 self.get_computed_style(child, Some(&computed_values), None);

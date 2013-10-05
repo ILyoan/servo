@@ -47,9 +47,9 @@ use servo_util::time;
 use servo_util::range::Range;
 use extra::url::Url;
 
-use script::style::selector_matching::{Stylist, AuthorOrigin};
+//use script::style::selector_matching::{Stylist, AuthorOrigin};
 
-use script::dom::node::{AbstractNode, LayoutView, ScriptView};
+use script::dom::node::{AbstractNode, LayoutView/*, ScriptView*/};
 use script::style::selector_matching::*;
 use extra::time::precise_time_ns;
 use script::html::cssparse::CSSData;
