@@ -4,6 +4,8 @@
 
 //! CSS block layout.
 
+#[allow(unused_variable)];
+
 use layout::box::{RenderBox};
 use layout::context::LayoutContext;
 use layout::display_list_builder::{DisplayListBuilder, ExtraDisplayListData};
@@ -211,10 +213,22 @@ impl BlockFlowData {
                                                            remaining_width,
                                                            style.font_size()).specified_or_zero();
 
+                let margin_top = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_top,
+                                                              remaining_width,
+                                                              style_sapin.Font.font_size).specified_or_zero();
+                let margin_bottom = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_bottom,
+                                                                 remaining_width,
+                                                                 style_sapin.Font.font_size).specified_or_zero();
+
                 let (width, margin_left, margin_right) =
                     (MaybeAuto::from_width(style.width(), remaining_width, style.font_size()),
                      MaybeAuto::from_margin(style.margin_left(), remaining_width, style.font_size()),
                      MaybeAuto::from_margin(style.margin_right(), remaining_width, style.font_size()));
+
+                let (width, margin_left, margin_right) =
+                    (MaybeAuto::from_width_sapin(style_sapin.Box.width, remaining_width, style_sapin.Font.font_size),
+                     MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_left, remaining_width, style_sapin.Font.font_size),
+                     MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_right, remaining_width, style_sapin.Font.font_size));
 
                 let (width, margin_left, margin_right) = self.compute_horiz(width,
                                                                             margin_left,
