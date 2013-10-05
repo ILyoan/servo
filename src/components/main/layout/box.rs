@@ -4,6 +4,8 @@
 
 //! The `RenderBox` type, which represents the leaves of the layout tree.
 
+#[allow(unused_variable)];
+
 use css::node_style::StyledNode;
 use layout::context::LayoutContext;
 use layout::display_list_builder::{DisplayListBuilder, ExtraDisplayListData, ToGfxColor};
@@ -386,6 +388,9 @@ impl RenderBox {
                 Au(0)
             } else {
                 let style = self.style();
+
+                let style_sapin = self.style_sapin();
+
                 let font_size = style.font_size();
                 let width = MaybeAuto::from_width(style.width(),
                                                   Au(0),
@@ -405,6 +410,27 @@ impl RenderBox {
                 let border_left = base.model.compute_border_width(style.border_left_width(),
                                                                   font_size);
                 let border_right = base.model.compute_border_width(style.border_right_width(),
+                                                                   font_size);
+
+                let font_size = style_sapin.Font.font_size;
+                let width = MaybeAuto::from_width_sapin(style_sapin.Box.width,
+                                                  Au(0),
+                                                  font_size).specified_or_zero();
+                let margin_left = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_left,
+                                                         Au(0),
+                                                         font_size).specified_or_zero();
+                let margin_right = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_right,
+                                                          Au(0),
+                                                          font_size).specified_or_zero();
+                let padding_left = base.model.compute_padding_length_sapin(style_sapin.Padding.padding_left,
+                                                                     Au(0),
+                                                                     font_size);
+                let padding_right = base.model.compute_padding_length_sapin(style_sapin.Padding.padding_right,
+                                                                      Au(0),
+                                                                      font_size);
+                let border_left = base.model.compute_border_width_sapin(style_sapin.Border.border_left_width,
+                                                                  font_size);
+                let border_right = base.model.compute_border_width_sapin(style_sapin.Border.border_right_width,
                                                                    font_size);
 
                 width + margin_left + margin_right + padding_left + padding_right +
