@@ -29,6 +29,7 @@ use extra::container::Deque;
 use extra::ringbuf::RingBuf;
 
 use script::style::properties::common_types::{computed};
+use script::style::properties::longhands::text_align;
 
 /*
 Lineboxes are represented as offsets into the child list, rather than
@@ -631,6 +632,16 @@ impl InlineFlowData {
                 linebox_align = CSSTextAlignLeft;
             }
 
+            // ymin
+            let linebox_align_sapin;
+            if line.range.begin() < self.boxes.len() {
+                let first_box = self.boxes[line.range.begin()];
+                linebox_align_sapin = first_box.text_align_sapin();
+            } else {
+                // Nothing to lay out, so assume left alignment.
+                linebox_align_sapin = text_align::left;
+            }
+
             // Set the box x positions
             let mut offset_x = line.bounds.origin.x;
             match linebox_align {
@@ -654,6 +665,36 @@ impl InlineFlowData {
                     }
                 }
                 CSSTextAlignRight => {
+                    offset_x = offset_x + slack_width;
+                    for i in line.range.eachi() {
+                        do self.boxes[i].with_mut_base |base| {
+                            base.position.origin.x = offset_x;
+                            offset_x = offset_x + base.position.size.width;
+                        }
+                    }
+                }
+            };
+
+            // ymin
+            match linebox_align_sapin {
+                text_align::left | text_align::justify => {
+                    for i in line.range.eachi() {
+                        do self.boxes[i].with_mut_base |base| {
+                            base.position.origin.x = offset_x;
+                            offset_x = offset_x + base.position.size.width;
+                        }
+                    }
+                }
+                text_align::center => {
+                    offset_x = offset_x + slack_width.scale_by(0.5f);
+                    for i in line.range.eachi() {
+                        do self.boxes[i].with_mut_base |base| {
+                            base.position.origin.x = offset_x;
+                            offset_x = offset_x + base.position.size.width;
+                        }
+                    }
+                }
+                text_align::right => {
                     offset_x = offset_x + slack_width;
                     for i in line.range.eachi() {
                         do self.boxes[i].with_mut_base |base| {

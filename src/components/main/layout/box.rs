@@ -41,6 +41,7 @@ use servo_util::range::*;
 use extra::url::Url;
 
 use script::style::properties::{ComputedValues};
+use script::style::properties::longhands::text_align;
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -905,6 +906,11 @@ impl RenderBox {
     /// node.
     pub fn text_align(&self) -> CSSTextAlign {
         self.nearest_ancestor_element().style().text_align()
+    }
+
+//    pub fn text_align_sapin(&self) -> CSSTextAlign {
+    pub fn text_align_sapin(&self) -> text_align::SpecifiedValue {
+        self.nearest_ancestor_element().style_sapin().Text.text_align
     }
 
     pub fn line_height(&self) -> CSSLineHeight {
