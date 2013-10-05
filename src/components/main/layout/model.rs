@@ -55,11 +55,35 @@ impl MaybeAuto {
         }
     }
 
+    pub fn from_margin_sapin(margin: computed::LengthOrPercentageOrAuto, _containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
+        match margin {
+            computed::LPA_Length(length) => {
+                match length {
+                    computed::Length(length) => Specified(Au::from_frac_px(length as float))
+                }
+            }
+            computed::LPA_Percentage(value) => Specified(Au::from_frac_px(value as float)),
+            computed::LPA_Auto => Auto
+        }
+    }
+
     pub fn from_width(width: CSSWidth, containing_width: Au, font_size: CSSFontSize) -> MaybeAuto {
         match width {
             CSSWidthAuto => Auto,
             CSSWidthPercentage(percent) => Specified(containing_width.scale_by(percent/100.0)),
             CSSWidthLength(length) => Specified(from_length(length, font_size))
+        }
+    }
+    
+    pub fn from_width_sapin(width: computed::LengthOrPercentageOrAuto, _containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
+        match width {
+            computed::LPA_Length(length) => {
+                match length {
+                    computed::Length(length) => Specified(Au::from_frac_px(length as float))
+                }
+            }
+            computed::LPA_Percentage(value) => Specified(Au::from_frac_px(value as float)),
+            computed::LPA_Auto => Auto
         }
     }
 
