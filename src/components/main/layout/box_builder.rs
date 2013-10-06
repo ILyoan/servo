@@ -18,11 +18,11 @@ use layout::text::TextRunScanner;
 use css::node_style::StyledNode;
 
 use newcss::values::{CSSDisplayBlock, CSSDisplayInline, CSSDisplayInlineBlock};
-use newcss::values::{CSSDisplayTable, CSSDisplayInlineTable, CSSDisplayListItem};
-use newcss::values::{CSSDisplayTableRowGroup, CSSDisplayTableHeaderGroup, CSSDisplayTableFooterGroup};
-use newcss::values::{CSSDisplayTableRow, CSSDisplayTableColumnGroup, CSSDisplayTableColumn};
-use newcss::values::{CSSDisplayTableCell, CSSDisplayTableCaption};
-use newcss::values::{CSSDisplayNone};
+//use newcss::values::{CSSDisplayTable, CSSDisplayInlineTable, CSSDisplayListItem};
+//use newcss::values::{CSSDisplayTableRowGroup, CSSDisplayTableHeaderGroup, CSSDisplayTableFooterGroup};
+//use newcss::values::{CSSDisplayTableRow, CSSDisplayTableColumnGroup, CSSDisplayTableColumn};
+//use newcss::values::{CSSDisplayTableCell, CSSDisplayTableCaption};
+//use newcss::values::{CSSDisplayNone};
 use newcss::values::{CSSFloatNone, CSSFloatLeft, CSSFloatRight};
 use layout::float_context::{FloatLeft, FloatRight};
 use script::dom::node::{AbstractNode, CommentNodeTypeId, DoctypeNodeTypeId};
@@ -394,9 +394,10 @@ impl LayoutTreeBuilder {
                 CSSDisplayTableCaption => CSSDisplayBlock,
                 v => v
             }*/
+
             match node.style_sapin().Box.display {
-		longhands::display::inline => CSSDisplayInline,
-		longhands::display::block => CSSDisplayBlock,
+                longhands::display::inline => CSSDisplayInline,
+                longhands::display::block => CSSDisplayBlock,
                 longhands::display::list_item => CSSDisplayBlock,
                 longhands::display::inline_block => CSSDisplayInlineBlock,
                 longhands::display::none => return NoGenerator, // tree ends here if 'display: none'
