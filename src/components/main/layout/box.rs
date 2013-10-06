@@ -841,7 +841,7 @@ impl RenderBox {
         // doesn't have a render box".
         let nearest_ancestor_element = self.nearest_ancestor_element();
 
-        let background_color = nearest_ancestor_element.style().background_color();
+        let background_color = color_exchange1(nearest_ancestor_element.style_sapin().Background.background_color);
         if !background_color.alpha.approx_eq(&0.0) {
             do list.with_mut_ref |list| {
                 let solid_color_display_item = ~SolidColorDisplayItem {
