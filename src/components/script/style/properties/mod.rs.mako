@@ -209,9 +209,9 @@ pub mod longhands {
     // TODO: don't parse values we don't support
     ${single_keyword("display",
         "none inline block list-item inline-block "
+        "table inline-table table-row-group table-header-group table-footer-group "
+        "table-row table-column-group table-column table-cell table-caption"
     )}
-//        "table inline-table table-row-group table-header-group table-footer-group "
-//        "table-row table-column-group table-column table-cell table-caption"
 
     ${single_keyword("position", "static absolute relative fixed")}
     ${single_keyword("float", "none left right")}

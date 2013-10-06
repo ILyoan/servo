@@ -30,7 +30,7 @@ use script::dom::node::{ElementNodeTypeId, LayoutView, TextNodeTypeId};
 use servo_util::range::Range;
 use servo_util::tree::{TreeNodeRef, TreeNode};
 use std::cell::Cell;
-use script::style::properties::longhands;
+use script::style::properties::longhands::display;
 
 pub struct LayoutTreeBuilder {
     next_cid: int,
@@ -396,11 +396,21 @@ impl LayoutTreeBuilder {
             }*/
 
             match node.style_sapin().Box.display {
-                longhands::display::inline => CSSDisplayInline,
-                longhands::display::block => CSSDisplayBlock,
-                longhands::display::list_item => CSSDisplayBlock,
-                longhands::display::inline_block => CSSDisplayInlineBlock,
-                longhands::display::none => return NoGenerator, // tree ends here if 'display: none'
+                display::inline => CSSDisplayInline,
+                display::block => CSSDisplayBlock,
+                display::list_item => CSSDisplayBlock,
+                display::inline_block => CSSDisplayInlineBlock,
+                display::table => CSSDisplayBlock,
+                display::inline_table => CSSDisplayInlineBlock,
+                display::table_row_group => CSSDisplayBlock,
+                display::table_header_group => CSSDisplayBlock,
+                display::table_footer_group => CSSDisplayBlock,
+                display::table_row => CSSDisplayBlock,
+                display::table_column_group => return NoGenerator,
+                display::table_column => return NoGenerator,
+                display::table_cell => CSSDisplayBlock,
+                display::table_caption => CSSDisplayBlock,
+                display::none => return NoGenerator, // tree ends here if 'display: none'
             }
         } else {
             match node.type_id() {
