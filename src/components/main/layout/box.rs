@@ -25,7 +25,8 @@ use gfx::display_list::{TextDisplayItemClass};
 use gfx::font::{FontStyle, FontWeight300};
 use gfx::geometry::Au;
 use gfx::text::text_run::TextRun;
-use newcss::color::rgb;
+use newcss::color::{Color, rgb};
+use newcss;
 use newcss::complete::CompleteStyle;
 use newcss::units::{Em, Px};
 use newcss::units::{Cursive, Fantasy, Monospace, SansSerif, Serif};
@@ -46,6 +47,8 @@ use script::style::properties::common_types::computed;
 use script::style::properties::ComputedValues;
 use script::style::properties::longhands::{clear, font_family, font_style};
 use script::style::properties::longhands::{line_height, text_align, text_decoration};
+use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
+use cssparser::*;
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -674,6 +677,7 @@ impl RenderBox {
                                                   dirty: &Rect<Au>,
                                                   offset: &Point2D<Au>,
                                                   list: &Cell<DisplayList<E>>) {
+	println("build_display_list, start");
         let box_bounds = self.position();
         let absolute_box_bounds = box_bounds.translate(offset);
         debug!("RenderBox::build_display_list at rel=%?, abs=%?: %s",
@@ -695,7 +699,8 @@ impl RenderBox {
                 self.paint_background_if_applicable(list, &absolute_box_bounds);
 
                 let nearest_ancestor_element = self.nearest_ancestor_element();
-                let color = nearest_ancestor_element.style().color().to_gfx_color();
+                //let color = nearest_ancestor_element.style().color().to_gfx_color();
+                let color = color_exchange2(nearest_ancestor_element.style_sapin().Color.color).to_gfx_color();
 
                 // Create the text box.
                 do list.with_mut_ref |list| {
@@ -1152,10 +1157,13 @@ impl RenderBox {
         if border.is_zero() {
             return
         }
-
+	println(fmt!("aa = %?", self.style_sapin().Border.border_top_color));
         let (top_color, right_color, bottom_color, left_color) = (self.style().border_top_color(), self.style().border_right_color(), self.style().border_bottom_color(), self.style().border_left_color());
         let (top_style, right_style, bottom_style, left_style) = (self.style().border_top_style(), self.style().border_right_style(), self.style().border_bottom_style(), self.style().border_left_style());
-        // Append the border to the display list.
+        //let (top_color, right_color, bottom_color, left_color) = (color_exchange1(self.style_sapin().Border.border_top_color), color_exchange1(self.style_sapin().Border.border_right_color), color_exchange1(self.style_sapin().Border.border_bottom_color), color_exchange1(self.style_sapin().Border.border_left_color));
+        //let (top_style, right_style, bottom_style, left_style) = (self.style_sapin().Border.border_top_style, self.style_sapin().Border.border_right_style, self.style_sapin().Border.border_bottom_style, self.style_sapin().Border.border_left_style);
+        
+	// Append the border to the display list.
         do list.with_mut_ref |list| {
             let border_display_item = ~BorderDisplayItem {
                 base: BaseDisplayItem {
@@ -1179,4 +1187,23 @@ impl RenderBox {
             list.append_item(BorderDisplayItemClass(border_display_item))
         }
     }
+}
+
+fn color_exchange1(input: Color) -> newcss::color::Color {
+	let mut output = newcss::color::Color { red: 0, green: 0, blue: 0, alpha: 0f };
+	match input {
+                CurrentColor => {}
+                RGBA(rgba) => { 
+			output.red = rgba.red as u8; 
+			output.green = rgba.green as u8; 
+			output.blue = rgba.blue as u8; 
+			output.alpha = rgba.alpha as float; 
+		}
+        };
+	output
+}
+
+fn color_exchange2(input: RGBA) -> newcss::color::Color {
+        let output = newcss::color::Color { red: input.red as u8, green: input.green as u8, blue: input.blue as u8, alpha: input.alpha as float };
+	output
 }

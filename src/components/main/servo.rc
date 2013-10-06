@@ -32,6 +32,7 @@ extern mod servo_util (name = "util");
 extern mod sharegl;
 extern mod stb_image;
 extern mod extra;
+extern mod cssparser;
 
 #[cfg(target_os="macos")]
 extern mod core_graphics;
