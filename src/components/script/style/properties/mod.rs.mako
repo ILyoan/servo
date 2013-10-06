@@ -208,7 +208,7 @@ pub mod longhands {
 
     // TODO: don't parse values we don't support
     ${single_keyword("display",
-        "inline block list-item inline-block none "
+        "none inline block list-item inline-block "
     )}
 //        "table inline-table table-row-group table-header-group table-footer-group "
 //        "table-row table-column-group table-column table-cell table-caption"

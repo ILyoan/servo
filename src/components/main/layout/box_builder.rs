@@ -30,6 +30,7 @@ use script::dom::node::{ElementNodeTypeId, LayoutView, TextNodeTypeId};
 use servo_util::range::Range;
 use servo_util::tree::{TreeNodeRef, TreeNode};
 use std::cell::Cell;
+use script::style::properties::longhands;
 
 pub struct LayoutTreeBuilder {
     next_cid: int,
@@ -375,7 +376,7 @@ impl LayoutTreeBuilder {
                                       -> BoxGenResult<'a> {
 
         let display = if node.is_element() {
-            match node.style().display(node.is_root()) {
+            /*match node.style().display(node.is_root()) {
                 CSSDisplayNone => return NoGenerator, // tree ends here if 'display: none'
                 // TODO(eatkinson) these are hacks so that the code doesn't crash
                 // when unsupported display values are used. They should be deleted
@@ -392,6 +393,13 @@ impl LayoutTreeBuilder {
                 CSSDisplayTableCell => CSSDisplayBlock,
                 CSSDisplayTableCaption => CSSDisplayBlock,
                 v => v
+            }*/
+            match node.style_sapin().Box.display {
+		longhands::display::inline => CSSDisplayInline,
+		longhands::display::block => CSSDisplayBlock,
+                longhands::display::list_item => CSSDisplayBlock,
+                longhands::display::inline_block => CSSDisplayInlineBlock,
+                longhands::display::none => return NoGenerator, // tree ends here if 'display: none'
             }
         } else {
             match node.type_id() {
