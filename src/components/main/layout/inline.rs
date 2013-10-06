@@ -29,7 +29,7 @@ use extra::container::Deque;
 use extra::ringbuf::RingBuf;
 
 use script::style::properties::common_types::{computed};
-use script::style::properties::longhands::text_align;
+use script::style::properties::longhands::{text_align, line_height};
 
 /*
 Lineboxes are represented as offsets into the child list, rather than
@@ -180,6 +180,19 @@ impl LineboxScanner {
         }
     }
 
+    // ymin
+    fn calculate_line_height_sapin(&self, box: RenderBox, font_size: Au) -> Au {
+        match box.line_height_sapin() {
+            line_height::Normal => font_size.scale_by(1.14f),
+            line_height::Length(length) => {
+                match length {
+                    computed::Length(length) => font_size.scale_by(length as float)
+                }
+            },
+            line_height::Number(number) => font_size.scale_by(number as float),
+        }
+    }
+    
     fn box_height(&self, box: RenderBox) -> Au {
         match box {
             ImageRenderBoxClass(image_box) => {
@@ -197,6 +210,7 @@ impl LineboxScanner {
                 let text_bounds = run.metrics_for_range(range).bounding_box;
                 let em_size = text_bounds.size.height;
                 let line_height = self.calculate_line_height(box, em_size);
+                let _line_height_sapin = self.calculate_line_height_sapin(box, em_size);
 
                 line_height
             }
