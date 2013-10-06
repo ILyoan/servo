@@ -44,7 +44,8 @@ use extra::url::Url;
 
 use script::style::properties::common_types::computed;
 use script::style::properties::ComputedValues;
-use script::style::properties::longhands::{clear, font_family, font_style, line_height, text_align};
+use script::style::properties::longhands::{clear, font_family, font_style};
+use script::style::properties::longhands::{line_height, text_align, text_decoration};
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -946,6 +947,68 @@ impl RenderBox {
             return font_style_cached.unwrap();
         } else {
             let font_style = get_font_style(self.nearest_ancestor_element());
+            match *self {
+                UnscannedTextRenderBoxClass(ref box) => {
+                    box.font_style = Some(font_style.clone());
+                }
+                _ => ()
+            }
+            return font_style;
+        }
+    }
+
+
+    /// Converts this node's computed style to a font style used for rendering.
+    pub fn font_style_sapin(&self) -> FontStyle {
+        fn get_font_style_sapin(element: AbstractNode<LayoutView>) -> FontStyle {
+            let my_style_sapin = element.style_sapin();
+
+            debug!("(font style) start: %?", element.type_id());
+
+            // FIXME: Too much allocation here.
+            let font_families = do my_style_sapin.Font.font_family.map |family| {
+                match *family {
+                    font_family::FamilyName(ref name) => name.to_str()
+                }
+            };
+
+            let font_families = font_families.connect(", ");
+            debug!("(font style) font families: `%s`", font_families);
+
+            let font_size = match my_style_sapin.Font.font_size {
+                computed::Length(length) => length as float
+            };
+            debug!("(font style) font size: `%fpx`", font_size);
+
+            let (italic, oblique) = match my_style_sapin.Font.font_style {
+                font_style::normal => (false, false),
+                font_style::italic => (true, false),
+                font_style::oblique => (false, true),
+            };
+
+            FontStyle {
+                pt_size: font_size,
+                weight: FontWeight300,
+                italic: italic,
+                oblique: oblique,
+                families: font_families,
+            }
+        }
+
+        let font_style_cached = match *self {
+            UnscannedTextRenderBoxClass(ref box) => {
+                match box.font_style {
+                    Some(ref style) => Some(style.clone()),
+                    None => None
+                }
+            }
+            _ => None
+        };
+
+        if font_style_cached.is_some() {
+            return font_style_cached.unwrap();
+        } else {
+            let font_style = get_font_style_sapin(self.nearest_ancestor_element());
             match *self {
                 UnscannedTextRenderBoxClass(ref box) => {
                     box.font_style = Some(font_style.clone());
