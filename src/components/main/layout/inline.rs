@@ -878,14 +878,17 @@ impl InlineFlowData {
                     },
                     CSSVerticalAlignLength(length) => {
                         let length_offset = match length {
-                            Em(l) => Au::from_frac_px(cur_box.font_style().pt_size * l),
+//                            Em(l) => Au::from_frac_px(cur_box.font_style().pt_size * l),
+                            Em(l) => Au::from_frac_px(cur_box.font_style_sapin().pt_size * l),
                             Px(l) => Au::from_frac_px(l),
                         };
                         -(length_offset + ascent)
                     },
                     CSSVerticalAlignPercentage(p) => {
-                        let pt_size = cur_box.font_style().pt_size;
-                        let line_height = scanner.calculate_line_height(cur_box, Au::from_pt(pt_size));
+//                        let pt_size = cur_box.font_style().pt_size;
+                        let pt_size = cur_box.font_style_sapin().pt_size;
+//                        let line_height = scanner.calculate_line_height(cur_box, Au::from_pt(pt_size));
+                        let line_height = scanner.calculate_line_height_sapin(cur_box, Au::from_pt(pt_size));
                         let percent_offset = line_height.scale_by(p / 100.0f);
                         -(percent_offset + ascent)
                     }

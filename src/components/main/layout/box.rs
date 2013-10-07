@@ -35,7 +35,8 @@ use newcss::values::{CSSClearNone, CSSClearLeft, CSSClearRight, CSSClearBoth};
 use newcss::values::{CSSFontFamilyFamilyName, CSSFontFamilyGenericFamily};
 use newcss::values::{CSSFontSizeLength, CSSFontStyleItalic, CSSFontStyleNormal};
 use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSTextDecoration, CSSLineHeight, CSSVerticalAlign};
-use newcss::values::{CSSTextDecorationNone, CSSFloatNone, CSSPositionStatic};
+use newcss::values::{CSSFloatNone, CSSPositionStatic};
+use newcss::values::{CSSTextDecorationNone, CSSTextDecorationUnderline, CSSTextDecorationOverline, CSSTextDecorationLineThrough, CSSTextDecorationBlink};
 use newcss::values::{CSSDisplayInlineBlock, CSSDisplayInlineTable};
 use script::dom::node::{AbstractNode, LayoutView};
 use servo_net::image::holder::ImageHolder;
@@ -48,6 +49,7 @@ use script::style::properties::ComputedValues;
 use script::style::properties::longhands::{clear, font_family, font_style};
 use script::style::properties::longhands::{line_height, text_align, text_decoration};
 use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
+use script::style::properties::longhands::{display, position, float};
 use cssparser::*;
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
@@ -129,6 +131,7 @@ pub struct UnscannedTextRenderBox {
     // this box can merge with another render box.
     font_style: Option<FontStyle>,
     text_decoration: Option<CSSTextDecoration>,
+//    text_decoration_sapin: Option<CSSTextDecoration>,
 }
 
 impl UnscannedTextRenderBox {
@@ -962,7 +965,6 @@ impl RenderBox {
         }
     }
 
-
     /// Converts this node's computed style to a font style used for rendering.
     pub fn font_style_sapin(&self) -> FontStyle {
         fn get_font_style_sapin(element: AbstractNode<LayoutView>) -> FontStyle {
@@ -1072,7 +1074,6 @@ impl RenderBox {
                 display_in_flow;
 
             let text_decoration = element.style().text_decoration();
-
             if(text_decoration == CSSTextDecorationNone && in_flow){
                 match element.parent_node() {
                     None => CSSTextDecorationNone,
@@ -1093,11 +1094,84 @@ impl RenderBox {
             }
             _ => None
         };
-
         if text_decoration_cached.is_some() {
             return text_decoration_cached.unwrap();
         } else {
             let text_decoration = get_propagated_text_decoration(self.nearest_ancestor_element());
+            match *self {
+                UnscannedTextRenderBoxClass(ref box) => {
+                    box.text_decoration = Some(text_decoration.clone());
+                }
+                _ => ()
+            }
+            return text_decoration;
+        }
+    }
+
+    // ymin
+    pub fn text_decoration_sapin(&self) -> CSSTextDecoration {
+        /// Computes the propagated value of text-decoration, as specified in CSS 2.1 § 16.3.1
+        /// TODO: make sure this works with anonymous box generation.
+        fn get_propagated_text_decoration_sapin(element: AbstractNode<LayoutView>) -> CSSTextDecoration {
+            //Skip over non-element nodes in the DOM
+            if(!element.is_element()){
+                return match element.parent_node() {
+                    None => CSSTextDecorationNone,
+                    Some(parent) => get_propagated_text_decoration_sapin(parent),
+                };
+            }
+
+            //FIXME: is the root param on display() important?
+            // FIXME: ymin ( display is flase or true ? )
+            let display_in_flow_sapin = match element.style_sapin().Box.display {
+                display::inline_table | display::inline_block => false,
+                _ => true,
+            };
+
+            let position = element.style().position();
+            let position_sapin = element.style_sapin().Box.position; // ymin
+            let float_sapin = element.style_sapin().Box.float; // ymin
+
+            let bool_position_sapin = match position_sapin { position::static_ => true, _ => false };
+            let bool_float_sapin = match float_sapin { float::none => true, _ => false };
+            let in_flow_sapin = bool_position_sapin && bool_float_sapin && display_in_flow_sapin;
+
+            let text_decoration_sapin = element.style_sapin().Text.text_decoration;
+            //printfln!("text_deco_sapin: %?", text_decoration_sapin);
+
+            //let text_decoration = element.style().text_decoration();
+            //printfln!("text_deco: %?", text_decoration);            
+
+            // text_deco_sapin: script::style::properties::longhands::text_decoration::SpecifiedValue{underline: false, overline: true, line_through: false}
+            // text_deco: CSSTextDecorationOverline ...
+            if (text_decoration_sapin.underline == false && text_decoration_sapin.overline == false && text_decoration_sapin.line_through == false)
+                && in_flow_sapin {
+                    match element.parent_node() {
+                    None => CSSTextDecorationNone,
+                    Some(parent) => get_propagated_text_decoration_sapin(parent),
+                }
+            } else {
+                if text_decoration_sapin.underline == true { CSSTextDecorationUnderline }
+                else if text_decoration_sapin.overline == true { CSSTextDecorationOverline }
+                else if text_decoration_sapin.line_through == true { CSSTextDecorationLineThrough }
+                else { CSSTextDecorationBlink }
+            }
+        }
+
+        let text_decoration_cached = match *self {
+            UnscannedTextRenderBoxClass(ref box) => {
+                match box.text_decoration {
+                    Some(ref decoration) => Some(decoration.clone()),
+                    None => None
+                }
+            }
+            _ => None
+        };
+
+        if text_decoration_cached.is_some() {
+            return text_decoration_cached.unwrap();
+        } else {
+            let text_decoration = get_propagated_text_decoration_sapin(self.nearest_ancestor_element());
             match *self {
                 UnscannedTextRenderBoxClass(ref box) => {
                     box.text_decoration = Some(text_decoration.clone());

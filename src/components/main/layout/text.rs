@@ -79,13 +79,15 @@ impl TextRunScanner {
         for box_i in range(0, flow.imm_inline().boxes.len()) {
             debug!("TextRunScanner: considering box: %?", flow.imm_inline().boxes[box_i].debug_str());
             if box_i > 0 && !can_coalesce_text_nodes(flow.imm_inline().boxes, box_i-1, box_i) {
-                last_whitespace = self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
+                // last_whitespace = self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
+                last_whitespace = self.flush_clump_to_list_sapin(ctx, flow, last_whitespace, &mut out_boxes);
             }
             self.clump.extend_by(1);
         }
         // handle remaining clumps
         if self.clump.length() > 0 {
-            self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
+            // self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
+            self.flush_clump_to_list_sapin(ctx, flow, last_whitespace, &mut out_boxes);
         }
 
         debug!("TextRunScanner: swapping out boxes.");
@@ -126,6 +128,7 @@ impl TextRunScanner {
                                out_boxes: &mut ~[RenderBox]) -> bool {
         let inline = flow.inline();
         let in_boxes = &inline.boxes;
+        println("flush_clump_to_list");
 
         assert!(self.clump.length() > 0);
 
@@ -143,10 +146,12 @@ impl TextRunScanner {
                 fail!(~"WAT: can't coalesce non-text nodes in flush_clump_to_list()!")
             }
             (true, false) => {
+                println("trye, false");
                 debug!("TextRunScanner: pushing single non-text box in range: %?", self.clump);
                 out_boxes.push(in_boxes[self.clump.begin()]);
             },
             (true, true)  => {
+                println("true, true");
                 let old_box = in_boxes[self.clump.begin()];
                 let text = old_box.raw_text();
                 let font_style = old_box.font_style();
@@ -163,7 +168,7 @@ impl TextRunScanner {
                     // font group fonts. This is probably achieved by creating the font group above
                     // and then letting `FontGroup` decide which `Font` to stick into the text run.
                     let fontgroup = ctx.font_ctx.get_resolved_font_for_style(&font_style);
-                    let run = @fontgroup.create_textrun(transformed_text, decoration);
+                    let run = @fontgroup.create_textrun(transformed_text.clone(), decoration);
 
                     debug!("TextRunScanner: pushing single text box in range: %? (%?)", self.clump, text);
                     let new_box = do old_box.with_base |old_box_base| {
@@ -175,6 +180,7 @@ impl TextRunScanner {
                 }
             },
             (false, true) => {
+                println("false, true");
                 // TODO(#115): Use the actual CSS `white-space` property of the relevant style.
                 let compression = CompressWhitespaceNewline;
 
@@ -265,4 +271,151 @@ impl TextRunScanner {
 
         new_whitespace
     } // End of `flush_clump_to_list`.
+
+    pub fn flush_clump_to_list_sapin(&mut self,
+                               ctx: &LayoutContext,
+                               flow: &mut FlowContext,
+                               last_whitespace: bool,
+                               out_boxes: &mut ~[RenderBox]) -> bool {
+        let inline = flow.inline();
+        let in_boxes = &inline.boxes;
+
+        assert!(self.clump.length() > 0);
+
+        debug!("TextRunScanner: flushing boxes in range=%?", self.clump);
+        let is_singleton = self.clump.length() == 1;
+        let is_text_clump = match in_boxes[self.clump.begin()] {
+            UnscannedTextRenderBoxClass(*) => true,
+            _ => false
+        };
+
+        let mut new_whitespace = last_whitespace;
+
+        match (is_singleton, is_text_clump) {
+            (false, false) => {
+                fail!(~"WAT: can't coalesce non-text nodes in flush_clump_to_list()!")
+            }
+            (true, false) => {
+                debug!("TextRunScanner: pushing single non-text box in range: %?", self.clump);
+                out_boxes.push(in_boxes[self.clump.begin()]);
+            },
+            (true, true)  => {
+                let old_box = in_boxes[self.clump.begin()];
+                let text = old_box.raw_text();
+                let font_style = old_box.font_style_sapin();
+                let decoration = old_box.text_decoration_sapin();
+
+                // TODO(#115): Use the actual CSS `white-space` property of the relevant style.
+                let compression = CompressWhitespaceNewline;
+
+                let (transformed_text, whitespace) = transform_text(text, compression, last_whitespace);
+                new_whitespace = whitespace;
+
+                if transformed_text.len() > 0 {
+                    // TODO(#177): Text run creation must account for the renderability of text by
+                    // font group fonts. This is probably achieved by creating the font group above
+                    // and then letting `FontGroup` decide which `Font` to stick into the text run.
+                    let fontgroup = ctx.font_ctx.get_resolved_font_for_style(&font_style);
+                    let run = @fontgroup.create_textrun(transformed_text.clone(), decoration);
+
+                    debug!("TextRunScanner: pushing single text box in range: %? (%?)", self.clump, text);
+                    let new_box = do old_box.with_base |old_box_base| {
+                        let range = Range::new(0, run.char_len());
+                        @mut adapt_textbox_with_range(*old_box_base, run, range)
+                    };
+
+                    out_boxes.push(TextRenderBoxClass(new_box));
+                }
+            },
+            (false, true) => {
+                // TODO(#115): Use the actual CSS `white-space` property of the relevant style.
+                let compression = CompressWhitespaceNewline;
+
+                // First, transform/compress text of all the nodes.
+                let mut last_whitespace_in_clump = new_whitespace;
+                let transformed_strs: ~[~str] = do vec::from_fn(self.clump.length()) |i| {
+                    // TODO(#113): We should be passing the compression context between calls to
+                    // `transform_text`, so that boxes starting and/or ending with whitespace can
+                    // be compressed correctly with respect to the text run.
+                    let idx = i + self.clump.begin();
+                    let (new_str, new_whitespace) = transform_text(in_boxes[idx].raw_text(),
+                                                                   compression,
+                                                                   last_whitespace_in_clump);
+                    last_whitespace_in_clump = new_whitespace;
+                    new_str
+                };
+                new_whitespace = last_whitespace_in_clump;
+
+                // Next, concatenate all of the transformed strings together, saving the new
+                // character indices.
+                let mut run_str: ~str = ~"";
+                let mut new_ranges: ~[Range] = ~[];
+                let mut char_total = 0;
+                for i in range(0, transformed_strs.len()) {
+                    let added_chars = transformed_strs[i].char_len();
+                    new_ranges.push(Range::new(char_total, added_chars));
+                    run_str.push_str(transformed_strs[i]);
+                    char_total += added_chars;
+                }
+
+                // Now create the run.
+                //
+                // TODO(#177): Text run creation must account for the renderability of text by
+                // font group fonts. This is probably achieved by creating the font group above
+                // and then letting `FontGroup` decide which `Font` to stick into the text run.
+                let font_style = in_boxes[self.clump.begin()].font_style_sapin();
+                let fontgroup = ctx.font_ctx.get_resolved_font_for_style(&font_style);
+                let decoration = in_boxes[self.clump.begin()].text_decoration_sapin();
+
+                // TextRuns contain a cycle which is usually resolved by the teardown
+                // sequence. If no clump takes ownership, however, it will leak.
+                let clump = self.clump;
+                let run = if clump.length() != 0 && run_str.len() > 0 {
+                    Some(@TextRun::new(fontgroup.fonts[0], run_str, decoration))
+                } else {
+                    None
+                };
+
+                // Make new boxes with the run and adjusted text indices.
+                debug!("TextRunScanner: pushing box(es) in range: %?", self.clump);
+                for i in clump.eachi() {
+                    let range = new_ranges[i - self.clump.begin()];
+                    if range.length() == 0 {
+                        debug!("Elided an `UnscannedTextbox` because it was zero-length after \
+                                compression; %s",
+                               in_boxes[i].debug_str());
+                        loop
+                    }
+
+                    do in_boxes[i].with_base |base| {
+                        let new_box = @mut adapt_textbox_with_range(*base, run.unwrap(), range);
+                        out_boxes.push(TextRenderBoxClass(new_box));
+                    }
+                }
+            }
+        } // End of match.
+
+        debug!("--- In boxes: ---");
+        for (i, box) in in_boxes.iter().enumerate() {
+            debug!("%u --> %s", i, box.debug_str());
+        }
+        debug!("------------------");
+
+        debug!("--- Out boxes: ---");
+        for (i, box) in out_boxes.iter().enumerate() {
+            debug!("%u --> %s", i, box.debug_str());
+        }
+        debug!("------------------");
+
+        debug!("--- Elem ranges: ---");
+        for (i, nr) in inline.elems.eachi() {
+            debug!("%u: %? --> %s", i, nr.range, nr.node.debug_str()); ()
+        }
+        debug!("--------------------");
+
+        let end = self.clump.end(); // FIXME: borrow checker workaround
+        self.clump.reset(end, 0);
+
+        new_whitespace
+    } // End of `flush_clump_to_list_sapin`.
 }

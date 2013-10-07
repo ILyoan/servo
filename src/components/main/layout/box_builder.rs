@@ -18,11 +18,11 @@ use layout::text::TextRunScanner;
 use css::node_style::StyledNode;
 
 use newcss::values::{CSSDisplayBlock, CSSDisplayInline, CSSDisplayInlineBlock};
-//use newcss::values::{CSSDisplayTable, CSSDisplayInlineTable, CSSDisplayListItem};
-//use newcss::values::{CSSDisplayTableRowGroup, CSSDisplayTableHeaderGroup, CSSDisplayTableFooterGroup};
-//use newcss::values::{CSSDisplayTableRow, CSSDisplayTableColumnGroup, CSSDisplayTableColumn};
-//use newcss::values::{CSSDisplayTableCell, CSSDisplayTableCaption};
-//use newcss::values::{CSSDisplayNone};
+use newcss::values::{CSSDisplayTable, CSSDisplayInlineTable, CSSDisplayListItem};
+use newcss::values::{CSSDisplayTableRowGroup, CSSDisplayTableHeaderGroup, CSSDisplayTableFooterGroup};
+use newcss::values::{CSSDisplayTableRow, CSSDisplayTableColumnGroup, CSSDisplayTableColumn};
+use newcss::values::{CSSDisplayTableCell, CSSDisplayTableCaption};
+use newcss::values::{CSSDisplayNone};
 use newcss::values::{CSSFloatNone, CSSFloatLeft, CSSFloatRight};
 use layout::float_context::{FloatLeft, FloatRight};
 use script::dom::node::{AbstractNode, CommentNodeTypeId, DoctypeNodeTypeId};
@@ -30,7 +30,7 @@ use script::dom::node::{ElementNodeTypeId, LayoutView, TextNodeTypeId};
 use servo_util::range::Range;
 use servo_util::tree::{TreeNodeRef, TreeNode};
 use std::cell::Cell;
-use script::style::properties::longhands::display;
+//use script::style::properties::longhands::display;
 
 pub struct LayoutTreeBuilder {
     next_cid: int,
@@ -376,7 +376,7 @@ impl LayoutTreeBuilder {
                                       -> BoxGenResult<'a> {
 
         let display = if node.is_element() {
-            /*match node.style().display(node.is_root()) {
+            match node.style().display(node.is_root()) {
                 CSSDisplayNone => return NoGenerator, // tree ends here if 'display: none'
                 // TODO(eatkinson) these are hacks so that the code doesn't crash
                 // when unsupported display values are used. They should be deleted
@@ -393,8 +393,8 @@ impl LayoutTreeBuilder {
                 CSSDisplayTableCell => CSSDisplayBlock,
                 CSSDisplayTableCaption => CSSDisplayBlock,
                 v => v
-            }*/
-
+            }
+/*
             match node.style_sapin().Box.display {
                 display::inline => CSSDisplayInline,
                 display::block => CSSDisplayBlock,
@@ -412,6 +412,7 @@ impl LayoutTreeBuilder {
                 display::table_caption => CSSDisplayBlock,
                 display::none => return NoGenerator, // tree ends here if 'display: none'
             }
+*/            
         } else {
             match node.type_id() {
 
