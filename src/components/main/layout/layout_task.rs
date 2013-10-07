@@ -189,12 +189,12 @@ impl LayoutTask {
     }
 
     fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
-        printfln!("handle_add_stylesheet");
+        //printfln!("handle_add_stylesheet");
         self.css_select_ctx.append_sheet(sheet, OriginAuthor);
     }
 
     fn handle_add_stylesheet2(&mut self, sheet: CSSData) {
-        printfln!("handle_add_stylesheet2");
+        //printfln!("handle_add_stylesheet2");
         self.css_data = sheet.data.get_ref().clone();
         self.css_select_ctx.append_sheet(sheet.sheet, OriginAuthor);
     }
@@ -250,6 +250,8 @@ impl LayoutTask {
                 printfln!("css data: %?", self.css_data);
                 //style.add_stylesheet(&"p {color: red;} h1 {color: blue;}", AuthorOrigin);
                 style.add_stylesheet(self.css_data, AuthorOrigin);
+
+                printfln!("style: %?", style);
                 let s = precise_time_ns();
                 style.get_computed_style(*node, None, None);
                 let e = precise_time_ns();

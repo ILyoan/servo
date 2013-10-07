@@ -81,7 +81,7 @@ type JSResult = ~[JSFile];
 
 enum CSSMessage {
     CSSTaskNewFile(StylesheetProvenance),
-    CSSTaskExit   
+    CSSTaskExit
 }
 
 enum JSMessage {
@@ -141,7 +141,7 @@ fn css_link_listener(to_parent: SharedChan<HtmlDiscoveryMessage>,
     loop {
         match from_parent.recv() {
             CSSTaskNewFile(provenance) => {
-                printfln!("CSSTaskNewFile: %?", provenance);
+                //printfln!("CSSTaskNewFile: %?", provenance);
                 result_vec.push(spawn_css_parser(provenance, resource_task.clone()));
             }
             CSSTaskExit => {
@@ -367,7 +367,7 @@ pub fn parse_html(cx: *JSContext,
 
     let (css_chan2, css_chan3, js_chan2) = (css_chan.clone(), css_chan.clone(), js_chan.clone());
     let next_subpage_id = Cell::new(next_subpage_id);
-    
+
     parser.set_tree_handler(~hubbub::TreeHandler {
         create_comment: |data: ~str| {
             debug!("create comment");
@@ -428,7 +428,7 @@ pub fn parse_html(cx: *JSContext,
                         for src in src_opt.iter() {
                             let iframe_url = make_url(src.clone(), Some(url2.clone()));
                             iframe_element.frame = Some(iframe_url.clone());
-                            
+
                             // Size future
                             let (port, chan) = comm::oneshot();
                             let size_future = from_port(port);

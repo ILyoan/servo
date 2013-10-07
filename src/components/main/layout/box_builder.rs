@@ -19,10 +19,10 @@ use css::node_style::StyledNode;
 
 use newcss::values::{CSSDisplayBlock, CSSDisplayInline, CSSDisplayInlineBlock};
 use newcss::values::{CSSDisplayTable, CSSDisplayInlineTable, CSSDisplayListItem};
-use newcss::values::{CSSDisplayTableRowGroup, CSSDisplayTableHeaderGroup, CSSDisplayTableFooterGroup};
-use newcss::values::{CSSDisplayTableRow, CSSDisplayTableColumnGroup, CSSDisplayTableColumn};
-use newcss::values::{CSSDisplayTableCell, CSSDisplayTableCaption};
-use newcss::values::{CSSDisplayNone};
+//use newcss::values::{CSSDisplayTableRowGroup, CSSDisplayTableHeaderGroup, CSSDisplayTableFooterGroup};
+//use newcss::values::{CSSDisplayTableRow, CSSDisplayTableColumnGroup, CSSDisplayTableColumn};
+//use newcss::values::{CSSDisplayTableCell, CSSDisplayTableCaption};
+//use newcss::values::{CSSDisplayNone};
 use newcss::values::{CSSFloatNone, CSSFloatLeft, CSSFloatRight};
 use layout::float_context::{FloatLeft, FloatRight};
 use script::dom::node::{AbstractNode, CommentNodeTypeId, DoctypeNodeTypeId};
@@ -30,7 +30,7 @@ use script::dom::node::{ElementNodeTypeId, LayoutView, TextNodeTypeId};
 use servo_util::range::Range;
 use servo_util::tree::{TreeNodeRef, TreeNode};
 use std::cell::Cell;
-//use script::style::properties::longhands::display;
+use script::style::properties::longhands::{display,float};
 
 pub struct LayoutTreeBuilder {
     next_cid: int,
@@ -82,7 +82,7 @@ impl<'self> BoxGenerator<'self> {
         return false;
     }
 
-    // TODO: implement this, generating spacer 
+    // TODO: implement this, generating spacer
     fn make_inline_spacer_for_node_side(_: &LayoutContext,
                                         _: AbstractNode<LayoutView>,
                                         _: InlineSpacerSide)
@@ -290,7 +290,7 @@ impl LayoutTreeBuilder {
 
         debug!("result from generator_for_node: %?", &box_gen_result);
         // Skip over nodes that don't belong in the flow tree
-        let (this_generator, next_generator) = 
+        let (this_generator, next_generator) =
             match box_gen_result {
                 NoGenerator => return Normal(prev_sibling_generator),
                 ParentGenerator => {
@@ -345,7 +345,7 @@ impl LayoutTreeBuilder {
                                                                             grandparent_clone_cell.take().unwrap(),
                                                                             Some(prev_gen));
                             prev_gen_cell.put_back(prev_generator);
-                        } 
+                        }
                     }
                 }
             }
@@ -366,7 +366,7 @@ impl LayoutTreeBuilder {
         }
     }
 
-    
+
 
     pub fn box_generator_for_node<'a>(&mut self,
                                       node: AbstractNode<LayoutView>,
@@ -376,6 +376,7 @@ impl LayoutTreeBuilder {
                                       -> BoxGenResult<'a> {
 
         let display = if node.is_element() {
+            /*
             match node.style().display(node.is_root()) {
                 CSSDisplayNone => return NoGenerator, // tree ends here if 'display: none'
                 // TODO(eatkinson) these are hacks so that the code doesn't crash
@@ -393,26 +394,41 @@ impl LayoutTreeBuilder {
                 CSSDisplayTableCell => CSSDisplayBlock,
                 CSSDisplayTableCaption => CSSDisplayBlock,
                 v => v
+            };*/
+
+            // printfln!("Box.display: %?", node.style_sapin().Box.display);
+            if node.is_root() {
+                match node.style_sapin().Box.display {
+                    display::inline => CSSDisplayBlock,
+                    display::block => CSSDisplayBlock,
+                    display::list_item => CSSDisplayBlock,
+                    display::inline_block => CSSDisplayInlineBlock,
+                    display::table => CSSDisplayBlock,
+                    display::inline_table => CSSDisplayInlineBlock,
+                    display::table_row_group => CSSDisplayBlock,
+                    display::table_header_group => CSSDisplayBlock,
+                    display::table_footer_group => CSSDisplayBlock,
+                    display::table_row => CSSDisplayBlock,
+                    display::table_column_group => return NoGenerator,
+                    display::table_column => return NoGenerator,
+                    display::table_cell => CSSDisplayBlock,
+                    display::table_caption => CSSDisplayBlock,
+                    display::none => return NoGenerator, // tree ends here if 'display: none'
+                }
+            } else {
+                // ryanc: FIXME: Wrong default values!!!!
+                match node.style_sapin().Box.display {
+                    display::none => return NoGenerator,
+                    display::block => CSSDisplayBlock,
+                    display::inline_block => CSSDisplayInlineBlock,
+                    // display::inline => CSSDisplayInline,
+                    display::inline => CSSDisplayBlock,
+                    display::list_item => CSSDisplayListItem,
+                    display::table_column_group => return NoGenerator,
+                    display::table_column => return NoGenerator,
+                    _ => CSSDisplayInline,
+                }
             }
-/*
-            match node.style_sapin().Box.display {
-                display::inline => CSSDisplayInline,
-                display::block => CSSDisplayBlock,
-                display::list_item => CSSDisplayBlock,
-                display::inline_block => CSSDisplayInlineBlock,
-                display::table => CSSDisplayBlock,
-                display::inline_table => CSSDisplayInlineBlock,
-                display::table_row_group => CSSDisplayBlock,
-                display::table_header_group => CSSDisplayBlock,
-                display::table_footer_group => CSSDisplayBlock,
-                display::table_row => CSSDisplayBlock,
-                display::table_column_group => return NoGenerator,
-                display::table_column => return NoGenerator,
-                display::table_cell => CSSDisplayBlock,
-                display::table_caption => CSSDisplayBlock,
-                display::none => return NoGenerator, // tree ends here if 'display: none'
-            }
-*/            
         } else {
             match node.type_id() {
 
@@ -422,10 +438,13 @@ impl LayoutTreeBuilder {
             }
         };
 
+        printfln!("display: %?", display);
+
         let sibling_flow: Option<&mut FlowContext> = sibling_generator.map_mut(|gen| &mut *gen.flow);
 
         // TODO(eatkinson): use the value of the float property to
         // determine whether to float left or right.
+        /*
         let is_float = if (node.is_element()) {
             match node.style().float() {
                 CSSFloatNone => None,
@@ -435,9 +454,19 @@ impl LayoutTreeBuilder {
         } else {
             None
         };
-        
+        */
+        let is_float = if (node.is_element()) {
+            match node.style_sapin().Box.float {
+                float::none => None,
+                float::left => Some(FloatLeft),
+                float::right => Some(FloatRight),
+            }
+        } else {
+            None
+        };
 
-        let new_generator = match (display, &mut parent_generator.flow, sibling_flow) { 
+
+        let new_generator = match (display, &mut parent_generator.flow, sibling_flow) {
             // Floats
             (CSSDisplayBlock, & &BlockFlow(_), _) |
             (CSSDisplayBlock, & &FloatFlow(_), _) if is_float.is_some() => {
@@ -447,8 +476,8 @@ impl LayoutTreeBuilder {
             // then continue building from the inline flow in case there are more inlines
             // afterward.
             (CSSDisplayBlock, _, Some(&InlineFlow(_))) if is_float.is_some() => {
-                let float_generator = self.create_child_generator(node, 
-                                                                  sibling_generator.unwrap(), 
+                let float_generator = self.create_child_generator(node,
+                                                                  sibling_generator.unwrap(),
                                                                   Flow_Float(is_float.unwrap()));
                 return Mixed(float_generator, ~SiblingGenerator);
             }
@@ -498,8 +527,8 @@ impl LayoutTreeBuilder {
             (CSSDisplayInline, & &BlockFlow(*), _) |
             (CSSDisplayInlineBlock, & &BlockFlow(*), _) => {
                 return match sibling_generator {
-                    None => NewGenerator(self.create_child_generator(node, 
-                                                                     parent_generator, 
+                    None => NewGenerator(self.create_child_generator(node,
+                                                                     parent_generator,
                                                                      Flow_Inline)),
                     Some(*) => SiblingGenerator
                 }
@@ -574,7 +603,7 @@ impl LayoutTreeBuilder {
                                 let boxes = &first_flow.imm_inline().boxes;
                                 if boxes.len() == 1 && boxes[0].is_whitespace_only() {
                                     debug!("LayoutTreeBuilder: pruning whitespace-only first child \
-                                            flow f%d from parent f%d", 
+                                            flow f%d from parent f%d",
                                             first_flow.id(),
                                             p_id);
                                     do_remove = true;
@@ -583,7 +612,7 @@ impl LayoutTreeBuilder {
                         }
                     }
                 }
-                if (do_remove) { 
+                if (do_remove) {
                     parent_flow.remove_first();
                 }
 
@@ -598,7 +627,7 @@ impl LayoutTreeBuilder {
                                 let boxes = &last_flow.imm_inline().boxes;
                                 if boxes.len() == 1 && boxes.last().is_whitespace_only() {
                                     debug!("LayoutTreeBuilder: pruning whitespace-only last child \
-                                            flow f%d from parent f%d", 
+                                            flow f%d from parent f%d",
                                             last_flow.id(),
                                             p_id);
                                     do_remove = true;
@@ -628,7 +657,7 @@ impl LayoutTreeBuilder {
     }
 
     pub fn fixup_split_inline(&self, _: &mut FlowContext) {
-        // TODO: finish me. 
+        // TODO: finish me.
         fail!(~"TODO: handle case where an inline is split by a block")
     }
 
@@ -636,7 +665,7 @@ impl LayoutTreeBuilder {
     pub fn construct_trees(&mut self, layout_ctx: &LayoutContext, root: AbstractNode<LayoutView>)
                        -> Result<FlowContext, ()> {
         debug!("Constructing flow tree for DOM: ");
-//        root.dump();
+        root.dump();
 
         let mut new_flow = self.make_flow(Flow_Root, root);
         {

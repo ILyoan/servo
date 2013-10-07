@@ -664,7 +664,7 @@ impl ScriptTask {
             // needs to be smarter about exiting pipelines.
             None => false,
         }
-        
+
     }
 
     /// The entry point to document loading. Defines bindings, sets up the window and document
@@ -733,7 +733,7 @@ impl ScriptTask {
                     js_scripts = Some(scripts);
                 }
                 Some(HtmlDiscoveredStyle(sheet)) => {
-                    printfln!("HtmlDiscoveredStyle: %?", sheet);
+                    //printfln!("HtmlDiscoveredStyle: %?", sheet);
                     //page.layout_chan.send(AddStylesheetMsg(sheet));
                     page.layout_chan.send(AddCSSDataMsg(sheet));
                 }
