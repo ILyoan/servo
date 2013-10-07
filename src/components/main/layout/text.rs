@@ -168,7 +168,8 @@ impl TextRunScanner {
                     // font group fonts. This is probably achieved by creating the font group above
                     // and then letting `FontGroup` decide which `Font` to stick into the text run.
                     let fontgroup = ctx.font_ctx.get_resolved_font_for_style(&font_style);
-                    let run = @fontgroup.create_textrun(transformed_text.clone(), decoration);
+//                    let run = @fontgroup.create_textrun(transformed_text.clone(), decoration);
+                    let run = @fontgroup.create_textrun(transformed_text.clone(), ~"none");
 
                     debug!("TextRunScanner: pushing single text box in range: %? (%?)", self.clump, text);
                     let new_box = do old_box.with_base |old_box_base| {
@@ -224,7 +225,8 @@ impl TextRunScanner {
                 // sequence. If no clump takes ownership, however, it will leak.
                 let clump = self.clump;
                 let run = if clump.length() != 0 && run_str.len() > 0 {
-                    Some(@TextRun::new(fontgroup.fonts[0], run_str, decoration))
+//                    Some(@TextRun::new(fontgroup.fonts[0], run_str, decoration))
+                    Some(@TextRun::new(fontgroup.fonts[0], run_str, ~"none"))
                 } else {
                     None
                 };
@@ -316,7 +318,8 @@ impl TextRunScanner {
                     // font group fonts. This is probably achieved by creating the font group above
                     // and then letting `FontGroup` decide which `Font` to stick into the text run.
                     let fontgroup = ctx.font_ctx.get_resolved_font_for_style(&font_style);
-                    let run = @fontgroup.create_textrun(transformed_text.clone(), decoration);
+                    //let run = @fontgroup.create_textrun(transformed_text.clone(), decoration);
+                    let run = @fontgroup.create_textrun(transformed_text.clone(), ~"none");
 
                     debug!("TextRunScanner: pushing single text box in range: %? (%?)", self.clump, text);
                     let new_box = do old_box.with_base |old_box_base| {
@@ -371,7 +374,8 @@ impl TextRunScanner {
                 // sequence. If no clump takes ownership, however, it will leak.
                 let clump = self.clump;
                 let run = if clump.length() != 0 && run_str.len() > 0 {
-                    Some(@TextRun::new(fontgroup.fonts[0], run_str, decoration))
+                    //Some(@TextRun::new(fontgroup.fonts[0], run_str, decoration))
+                    Some(@TextRun::new(fontgroup.fonts[0], run_str, ~"none"))
                 } else {
                     None
                 };

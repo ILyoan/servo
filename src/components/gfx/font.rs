@@ -195,7 +195,8 @@ impl FontGroup {
         self.fonts = ~[];
     }
 
-    pub fn create_textrun(&self, text: ~str, decoration: CSSTextDecoration) -> TextRun {
+//    pub fn create_textrun(&self, text: ~str, decoration: CSSTextDecoration) -> TextRun {
+    pub fn create_textrun(&self, text: ~str, decoration: ~str) -> TextRun {
         assert!(self.fonts.len() > 0);
 
         // TODO(Issue #177): Actually fall back through the FontGroup when a font is unsuitable.

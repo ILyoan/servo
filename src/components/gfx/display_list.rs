@@ -143,6 +143,8 @@ impl<E> DisplayItem<E> {
                 let strikeout_size = font.metrics.strikeout_size;
                 let strikeout_offset = font.metrics.strikeout_offset;
 
+                /*
+                // FIXME: ymin text decoration
                 match new_run.decoration {
                     CSSTextDecorationUnderline => {
                         let underline_y = baseline_origin.y - underline_offset;
@@ -163,6 +165,10 @@ impl<E> DisplayItem<E> {
                     },
                     _ => ()
                 }
+                */ 
+                 if new_run.decoration == ~"none" {
+                     // TODO
+                 }
             }
 
             ImageDisplayItemClass(ref image_item) => {

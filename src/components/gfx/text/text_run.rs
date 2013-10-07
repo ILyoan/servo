@@ -16,7 +16,8 @@ use newcss::values::CSSTextDecoration;
 pub struct TextRun {
     text: ~str,
     font: @mut Font,
-    decoration: CSSTextDecoration,
+//    decoration: CSSTextDecoration,
+    decoration: ~str,
     glyphs: ~[Arc<GlyphStore>],
 }
 
@@ -24,7 +25,8 @@ pub struct TextRun {
 pub struct SendableTextRun {
     text: ~str,
     font: FontDescriptor,
-    decoration: CSSTextDecoration,
+//    decoration: CSSTextDecoration,
+    decoration: ~str,
     priv glyphs: ~[Arc<GlyphStore>],
 }
 
@@ -38,7 +40,8 @@ impl SendableTextRun {
         TextRun {
             text: self.text.clone(),
             font: font,
-            decoration: self.decoration,
+//            decoration: self.decoration,
+            decoration: self.decoration.clone(),
             glyphs: self.glyphs.clone(),
         }
     }
@@ -117,7 +120,8 @@ impl<'self> Iterator<Range> for LineIterator<'self> {
 }
 
 impl<'self> TextRun {
-    pub fn new(font: @mut Font, text: ~str, decoration: CSSTextDecoration) -> TextRun {
+//    pub fn new(font: @mut Font, text: ~str, decoration: CSSTextDecoration) -> TextRun {
+    pub fn new(font: @mut Font, text: ~str, decoration: ~str) -> TextRun {
         let glyphs = TextRun::break_and_shape(font, text);
 
         let run = TextRun {
@@ -192,7 +196,8 @@ impl<'self> TextRun {
         SendableTextRun {
             text: self.text.clone(),
             font: self.font.get_descriptor(),
-            decoration: self.decoration,
+//            decoration: self.decoration,
+            decoration: self.decoration.clone(),
             glyphs: self.glyphs.clone(),
         }
     }
