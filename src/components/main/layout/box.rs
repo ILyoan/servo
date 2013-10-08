@@ -1261,6 +1261,6 @@ fn color_exchange1(input: Color) -> newcss::color::Color {
 }
 
 fn color_exchange2(input: RGBA) -> newcss::color::Color {
-        let output = newcss::color::Color { red: input.red as u8, green: input.green as u8, blue: input.blue as u8, alpha: input.alpha as float };
+        let output = newcss::color::Color { red: (input.red * 255.0) as u8, green: (input.green * 255.0) as u8, blue: (input.blue * 255.0) as u8, alpha: input.alpha as float };
 	output
 }
