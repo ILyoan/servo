@@ -304,6 +304,7 @@ impl TextRunScanner {
             (true, true)  => {
                 let old_box = in_boxes[self.clump.begin()];
                 let text = old_box.raw_text();
+                let font_style = old_box.font_style();
                 let font_style = old_box.font_style_sapin();
                 let decoration = old_box.text_decoration_sapin();
 

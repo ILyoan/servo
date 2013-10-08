@@ -680,7 +680,6 @@ impl RenderBox {
                                                   dirty: &Rect<Au>,
                                                   offset: &Point2D<Au>,
                                                   list: &Cell<DisplayList<E>>) {
-	println("build_display_list, start");
         let box_bounds = self.position();
         let absolute_box_bounds = box_bounds.translate(offset);
         debug!("RenderBox::build_display_list at rel=%?, abs=%?: %s",
@@ -883,7 +882,6 @@ impl RenderBox {
     pub fn font_style(&self) -> FontStyle {
         fn get_font_style(element: AbstractNode<LayoutView>) -> FontStyle {
             let my_style = element.style();
-            let my_style_sapin = element.style_sapin();
 
             debug!("(font style) start: %?", element.type_id());
 
@@ -899,12 +897,6 @@ impl RenderBox {
                 }
             };
 
-            let font_families = do my_style_sapin.Font.font_family.map |family| {
-                match *family {
-                    font_family::FamilyName(ref name) => name.to_str()
-                }
-            };
-
             let font_families = font_families.connect(", ");
             debug!("(font style) font families: `%s`", font_families);
 
@@ -914,22 +906,13 @@ impl RenderBox {
                 CSSFontSizeLength(Em(length)) => length * 16f,
                 _ => 16f // px units
             };
-
-            let font_size = match my_style_sapin.Font.font_size {
-                computed::Length(length) => length as float
-            };
+ 	    println(fmt!("In font_style(), font_size = %?", font_size));
             debug!("(font style) font size: `%fpx`", font_size);
 
             let (italic, oblique) = match my_style.font_style() {
                 CSSFontStyleNormal => (false, false),
                 CSSFontStyleItalic => (true, false),
                 CSSFontStyleOblique => (false, true),
-            };
-
-            let (italic, oblique) = match my_style_sapin.Font.font_style {
-                font_style::normal => (false, false),
-                font_style::italic => (true, false),
-                font_style::oblique => (false, true),
             };
 
             FontStyle {
@@ -985,6 +968,7 @@ impl RenderBox {
             let font_size = match my_style_sapin.Font.font_size {
                 computed::Length(length) => length as float
             };
+ 	    println(fmt!("In font_style_sapin(), font_size = %?", font_size));
             debug!("(font style) font size: `%fpx`", font_size);
 
             let (italic, oblique) = match my_style_sapin.Font.font_style {
@@ -1231,7 +1215,6 @@ impl RenderBox {
         if border.is_zero() {
             return
         }
-	println(fmt!("aa = %?", self.style_sapin().Border.border_top_color));
         let (top_color, right_color, bottom_color, left_color) = (self.style().border_top_color(), self.style().border_right_color(), self.style().border_bottom_color(), self.style().border_left_color());
         let (top_style, right_style, bottom_style, left_style) = (self.style().border_top_style(), self.style().border_right_style(), self.style().border_bottom_style(), self.style().border_left_style());
         //let (top_color, right_color, bottom_color, left_color) = (color_exchange1(self.style_sapin().Border.border_top_color), color_exchange1(self.style_sapin().Border.border_right_color), color_exchange1(self.style_sapin().Border.border_bottom_color), color_exchange1(self.style_sapin().Border.border_left_color));
