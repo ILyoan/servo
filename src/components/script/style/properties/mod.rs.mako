@@ -879,7 +879,6 @@ pub fn cascade(applicable_declarations: &[@[PropertyDeclaration]],
             }
         };
     )
-    context.font_size = get_computed!(Font, font_size);
     ComputedValues {
         % for style_struct, longhands in LONGHANDS_PER_STYLE_STRUCT:
             ${style_struct}: style_structs::${style_struct} {
