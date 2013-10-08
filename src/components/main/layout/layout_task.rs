@@ -248,7 +248,6 @@ impl LayoutTask {
 
                 let mut style = Stylist::new();
                 printfln!("css data: %?", self.css_data);
-                //style.add_stylesheet(&"p {color: red;} h1 {color: blue;}", AuthorOrigin);
                 style.add_stylesheet(html4_default_style_str_tmp(), UserAgentOrigin);
                 style.add_stylesheet(self.css_data, AuthorOrigin);
 
