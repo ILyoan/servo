@@ -15,15 +15,15 @@ use layout::flow::{Flow_Inline, Flow_InlineBlock, Flow_Root, Flow_Table, FlowCon
 use layout::flow::{FlowContextType, FlowData, InlineBlockFlow, InlineFlow, TableFlow};
 use layout::inline::{InlineFlowData, InlineLayout};
 use layout::text::TextRunScanner;
-use css::node_style::StyledNode;
+// use css::node_style::StyledNode;
 
 use newcss::values::{CSSDisplayBlock, CSSDisplayInline, CSSDisplayInlineBlock};
 use newcss::values::{CSSDisplayTable, CSSDisplayInlineTable, CSSDisplayListItem};
-//use newcss::values::{CSSDisplayTableRowGroup, CSSDisplayTableHeaderGroup, CSSDisplayTableFooterGroup};
-//use newcss::values::{CSSDisplayTableRow, CSSDisplayTableColumnGroup, CSSDisplayTableColumn};
-//use newcss::values::{CSSDisplayTableCell, CSSDisplayTableCaption};
-//use newcss::values::{CSSDisplayNone};
-use newcss::values::{CSSFloatNone, CSSFloatLeft, CSSFloatRight};
+use newcss::values::{CSSDisplayTableRowGroup, CSSDisplayTableHeaderGroup, CSSDisplayTableFooterGroup};
+use newcss::values::{CSSDisplayTableRow, CSSDisplayTableColumnGroup, CSSDisplayTableColumn};
+use newcss::values::{CSSDisplayTableCell, CSSDisplayTableCaption};
+// use newcss::values::{CSSDisplayNone};
+// use newcss::values::{CSSFloatNone, CSSFloatLeft, CSSFloatRight};
 use layout::float_context::{FloatLeft, FloatRight};
 use script::dom::node::{AbstractNode, CommentNodeTypeId, DoctypeNodeTypeId};
 use script::dom::node::{ElementNodeTypeId, LayoutView, TextNodeTypeId};
@@ -416,17 +416,22 @@ impl LayoutTreeBuilder {
                     display::none => return NoGenerator, // tree ends here if 'display: none'
                 }
             } else {
-                // ryanc: FIXME: Wrong default values!!!!
                 match node.style_sapin().Box.display {
                     display::none => return NoGenerator,
                     display::block => CSSDisplayBlock,
                     display::inline_block => CSSDisplayInlineBlock,
-                    // display::inline => CSSDisplayInline,
-                    display::inline => CSSDisplayBlock,
+                    display::inline => CSSDisplayInline,
                     display::list_item => CSSDisplayListItem,
-                    display::table_column_group => return NoGenerator,
-                    display::table_column => return NoGenerator,
-                    _ => CSSDisplayInline,
+                    display::table => CSSDisplayTable,
+                    display::inline_table => CSSDisplayInlineTable,
+                    display::table_row_group => CSSDisplayTableRowGroup,
+                    display::table_header_group => CSSDisplayTableHeaderGroup,
+                    display::table_footer_group => CSSDisplayTableFooterGroup,
+                    display::table_row => CSSDisplayTableRow,
+                    display::table_column_group => CSSDisplayTableColumnGroup,
+                    display::table_column => CSSDisplayTableColumn,
+                    display::table_cell => CSSDisplayTableCell,
+                    display::table_caption => CSSDisplayTableCaption,
                 }
             }
         } else {
@@ -437,8 +442,7 @@ impl LayoutTreeBuilder {
                 DoctypeNodeTypeId | CommentNodeTypeId => return NoGenerator,
             }
         };
-
-        printfln!("display: %?", display);
+        // printfln!("display: %?", display);
 
         let sibling_flow: Option<&mut FlowContext> = sibling_generator.map_mut(|gen| &mut *gen.flow);
 

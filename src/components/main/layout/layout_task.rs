@@ -6,7 +6,7 @@
 /// rendered.
 
 use css::matching::MatchMethods;
-use css::select::new_css_select_ctx;
+use css::select::{new_css_select_ctx, html4_default_style_str_tmp};
 use layout::aux::LayoutAuxMethods;
 use layout::box_builder::LayoutTreeBuilder;
 use layout::context::LayoutContext;
@@ -249,6 +249,7 @@ impl LayoutTask {
                 let mut style = Stylist::new();
                 printfln!("css data: %?", self.css_data);
                 //style.add_stylesheet(&"p {color: red;} h1 {color: blue;}", AuthorOrigin);
+                style.add_stylesheet(html4_default_style_str_tmp(), UserAgentOrigin);
                 style.add_stylesheet(self.css_data, AuthorOrigin);
 
                 printfln!("style: %?", style);
