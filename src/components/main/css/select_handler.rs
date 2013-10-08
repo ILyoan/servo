@@ -44,7 +44,7 @@ impl SelectHandler<AbstractNode<LayoutView>> for NodeSelectHandler {
     }
 
     // TODO: Use a Bloom filter.
-    fn named_ancestor_node(&self, node: &AbstractNode<LayoutView>, name: &str)
+    fn named_ancestor_node(&mut self, node: &AbstractNode<LayoutView>, name: &str)
                            -> Option<AbstractNode<LayoutView>> {
         let mut node = *node;
         loop {
@@ -112,7 +112,7 @@ impl SelectHandler<AbstractNode<LayoutView>> for NodeSelectHandler {
         }
     }
 
-    fn with_node_id<R>(&self, node: &AbstractNode<LayoutView>, f: &fn(Option<&str>) -> R) -> R {
+    fn with_node_id<R>(&mut self, node: &AbstractNode<LayoutView>, f: &fn(Option<&str>) -> R) -> R {
         if !node.is_element() {
             fail!(~"attempting to style non-element node");
         }
@@ -121,7 +121,7 @@ impl SelectHandler<AbstractNode<LayoutView>> for NodeSelectHandler {
         }
     }
 
-    fn node_has_id(&self, node: &AbstractNode<LayoutView>, id: &str) -> bool {
+    fn node_has_id(&mut self, node: &AbstractNode<LayoutView>, id: &str) -> bool {
         if !node.is_element() {
             fail!(~"attempting to style non-element node");
         }
