@@ -51,6 +51,7 @@ use script::style::properties::longhands::{line_height, text_align, text_decorat
 use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
 use script::style::properties::longhands::{display, position, float};
 use cssparser::*;
+use cssparser;
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -278,7 +279,8 @@ impl RenderBox {
     pub fn can_merge_with_box(&self, other: RenderBox) -> bool {
         match (self, &other) {
             (&UnscannedTextRenderBoxClass(*), &UnscannedTextRenderBoxClass(*)) => {
-                self.font_style() == other.font_style() && self.text_decoration() == other.text_decoration()
+//                self.font_style() == other.font_style() && self.text_decoration() == other.text_decoration()
+                self.font_style_sapin() == other.font_style_sapin() && self.text_decoration() == other.text_decoration()
             },
             (&TextRenderBoxClass(text_box_a), &TextRenderBoxClass(text_box_b)) => {
                 managed::ptr_eq(text_box_a.run, text_box_b.run)
@@ -390,35 +392,13 @@ impl RenderBox {
     //
     // TODO(eatkinson): integrate with
     // get_min_width and get_pref_width?
-    fn guess_width (&self) -> Au {
+
+    fn guess_width_sapin(&self) -> Au {
         do self.with_base |base| {
             if(!base.node.is_element()) {
                 Au(0)
             } else {
-                let style = self.style();
-
                 let style_sapin = self.style_sapin();
-
-                let font_size = style.font_size();
-                let width = MaybeAuto::from_width(style.width(),
-                                                  Au(0),
-                                                  font_size).specified_or_zero();
-                let margin_left = MaybeAuto::from_margin(style.margin_left(),
-                                                         Au(0),
-                                                         font_size).specified_or_zero();
-                let margin_right = MaybeAuto::from_margin(style.margin_right(),
-                                                          Au(0),
-                                                          font_size).specified_or_zero();
-                let padding_left = base.model.compute_padding_length(style.padding_left(),
-                                                                     Au(0),
-                                                                     font_size);
-                let padding_right = base.model.compute_padding_length(style.padding_right(),
-                                                                      Au(0),
-                                                                      font_size);
-                let border_left = base.model.compute_border_width(style.border_left_width(),
-                                                                  font_size);
-                let border_right = base.model.compute_border_width(style.border_right_width(),
-                                                                   font_size);
 
                 let font_size = style_sapin.Font.font_size;
                 let width = MaybeAuto::from_width_sapin(style_sapin.Box.width,
@@ -452,7 +432,8 @@ impl RenderBox {
         // FIXME(pcwalton): I think we only need to calculate this if the damage says that CSS
         // needs to be restyled.
 
-        self.guess_width() + match *self {
+        //self.guess_width() + match *self {
+        self.guess_width_sapin() + match *self {
             // TODO: This should account for the minimum width of the box element in isolation.
             // That includes borders, margins, and padding, but not child widths. The block
             // `FlowContext` will combine the width of this element and that of its children to
@@ -473,7 +454,8 @@ impl RenderBox {
 
     /// Returns the *preferred width* of this render box as defined by the CSS specification.
     pub fn get_pref_width(&self, _: &LayoutContext) -> Au {
-        self.guess_width() + match *self {
+        //self.guess_width() + match *self {
+        self.guess_width_sapin() + match *self {
             // TODO: This should account for the preferred width of the box element in isolation.
             // That includes borders, margins, and padding, but not child widths. The block
             // `FlowContext` will combine the width of this element and that of its children to
@@ -568,12 +550,6 @@ impl RenderBox {
     pub fn get_used_height(&self) -> (Au, Au) {
         // TODO: This should actually do some computation! See CSS 2.1, Sections 10.5 and 10.6.
         (Au(0), Au(0))
-    }
-
-    pub fn compute_padding(&self, cb_width: Au) {
-        do self.with_mut_base |base| {
-            base.model.compute_padding(base.node.style(), cb_width);
-        }
     }
 
     pub fn compute_padding_sapin(&self, cb_width: Au) {
@@ -879,81 +855,11 @@ impl RenderBox {
     }
 
     /// Converts this node's computed style to a font style used for rendering.
-    pub fn font_style(&self) -> FontStyle {
-        fn get_font_style(element: AbstractNode<LayoutView>) -> FontStyle {
-            let my_style = element.style();
-
-            debug!("(font style) start: %?", element.type_id());
-
-            // FIXME: Too much allocation here.
-            let font_families = do my_style.font_family().map |family| {
-                match *family {
-                    CSSFontFamilyFamilyName(ref family_str) => (*family_str).clone(),
-                    CSSFontFamilyGenericFamily(Serif)       => ~"serif",
-                    CSSFontFamilyGenericFamily(SansSerif)   => ~"sans-serif",
-                    CSSFontFamilyGenericFamily(Cursive)     => ~"cursive",
-                    CSSFontFamilyGenericFamily(Fantasy)     => ~"fantasy",
-                    CSSFontFamilyGenericFamily(Monospace)   => ~"monospace",
-                }
-            };
-
-            let font_families = font_families.connect(", ");
-            debug!("(font style) font families: `%s`", font_families);
-
-            let font_size = match my_style.font_size() {
-                CSSFontSizeLength(Px(length)) => length,
-                // todo: this is based on a hard coded font size, should be the parent element's font size
-                CSSFontSizeLength(Em(length)) => length * 16f,
-                _ => 16f // px units
-            };
- 	    println(fmt!("In font_style(), font_size = %?", font_size));
-            debug!("(font style) font size: `%fpx`", font_size);
-
-            let (italic, oblique) = match my_style.font_style() {
-                CSSFontStyleNormal => (false, false),
-                CSSFontStyleItalic => (true, false),
-                CSSFontStyleOblique => (false, true),
-            };
-
-            FontStyle {
-                pt_size: font_size,
-                weight: FontWeight300,
-                italic: italic,
-                oblique: oblique,
-                families: font_families,
-            }
-        }
-
-        let font_style_cached = match *self {
-            UnscannedTextRenderBoxClass(ref box) => {
-                match box.font_style {
-                    Some(ref style) => Some(style.clone()),
-                    None => None
-                }
-            }
-            _ => None
-        };
-
-        if font_style_cached.is_some() {
-            return font_style_cached.unwrap();
-        } else {
-            let font_style = get_font_style(self.nearest_ancestor_element());
-            match *self {
-                UnscannedTextRenderBoxClass(ref box) => {
-                    box.font_style = Some(font_style.clone());
-                }
-                _ => ()
-            }
-            return font_style;
-        }
-    }
-
-    /// Converts this node's computed style to a font style used for rendering.
     pub fn font_style_sapin(&self) -> FontStyle {
         fn get_font_style_sapin(element: AbstractNode<LayoutView>) -> FontStyle {
             let my_style_sapin = element.style_sapin();
 
-            debug!("(font style) start: %?", element.type_id());
+            printfln!("(font style) start: %?", element.type_id());
 
             // FIXME: Too much allocation here.
             let font_families = do my_style_sapin.Font.font_family.map |family| {
@@ -962,14 +868,14 @@ impl RenderBox {
                 }
             };
 
+            printfln!("~(font style) font families: `%s`", font_families.to_str());
             let font_families = font_families.connect(", ");
-            debug!("(font style) font families: `%s`", font_families);
+            printfln!("(font style) font families: `%s`", font_families);
 
             let font_size = match my_style_sapin.Font.font_size {
                 computed::Length(length) => length as float
             };
- 	    println(fmt!("In font_style_sapin(), font_size = %?", font_size));
-            debug!("(font style) font size: `%fpx`", font_size);
+            printfln!("(font style) font size: `%fpx`", font_size);
 
             let (italic, oblique) = match my_style_sapin.Font.font_style {
                 font_style::normal => (false, false),

@@ -189,12 +189,22 @@ impl LayoutTask {
     }
 
     fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
-        //printfln!("handle_add_stylesheet");
+        printfln!("handle_add_stylesheet");
         self.css_select_ctx.append_sheet(sheet, OriginAuthor);
     }
 
     fn handle_add_stylesheet2(&mut self, sheet: CSSData) {
-        //printfln!("handle_add_stylesheet2");
+        printfln!("handle_add_stylesheet2");
+        let css_data = sheet.data.get_ref().clone();
+        if self.css_data.len() == 0 {
+            printfln!("1css_data: %?", css_data);
+            printfln!("1self.css_data: %?",self.css_data);
+            self.css_data = css_data;
+        } else if (self.css_data != css_data) && (css_data.len() > 0) {
+            printfln!("2css_data: %?", css_data);
+            printfln!("2self.css_data: %?",self.css_data);
+            self.css_data = css_data;
+        }
         self.css_data = sheet.data.get_ref().clone();
         self.css_select_ctx.append_sheet(sheet.sheet, OriginAuthor);
     }
@@ -238,6 +248,7 @@ impl LayoutTask {
         match data.damage.level {
             ReflowDocumentDamage => {}
             MatchSelectorsDocumentDamage => {
+                println("MatchSelectorsDocumentDamage");
                 do profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone()) {
                     let s = precise_time_ns();
                     node.restyle_subtree(self.css_select_ctx);
@@ -251,7 +262,7 @@ impl LayoutTask {
                 style.add_stylesheet(html4_default_style_str_tmp(), UserAgentOrigin);
                 style.add_stylesheet(self.css_data, AuthorOrigin);
 
-                printfln!("style: %?", style);
+                //printfln!("style: %?", style);
                 let s = precise_time_ns();
                 style.get_computed_style(*node, None, None);
                 let e = precise_time_ns();
@@ -325,7 +336,8 @@ impl LayoutTask {
             // NOTE: this currently computes borders, so any pruning should separate that operation out.
             debug!("assigning widths");
             do layout_root.each_preorder |flow| {
-                flow.assign_widths(&mut layout_ctx);
+                //flow.assign_widths(&mut layout_ctx);
+                flow.assign_widths_sapin(&mut layout_ctx);
                 true
             };
 
@@ -333,7 +345,8 @@ impl LayoutTask {
             // FIXME: prune this traversal as well
             debug!("assigning height");
             do layout_root.each_bu_sub_inorder |flow| {
-                flow.assign_height(&mut layout_ctx);
+                //flow.assign_height(&mut layout_ctx);
+                flow.assign_height_sapin(&mut layout_ctx);
                 true
             };
         }

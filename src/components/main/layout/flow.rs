@@ -357,36 +357,36 @@ impl<'self> FlowContext {
         match *self {
             BlockFlow(ref mut info)  => info.bubble_widths_block(ctx),
             InlineFlow(ref mut info) => info.bubble_widths_inline(ctx),
-            FloatFlow(ref mut info)  => info.bubble_widths_float(ctx),
+            FloatFlow(ref mut info)  => info.bubble_widths_float_sapin(ctx),
             _ => fail!(fmt!("Tried to bubble_widths of flow: f%d", self.id()))
         }
     }
-
-    pub fn assign_widths(&mut self, ctx: &mut LayoutContext) {
+ 
+    pub fn assign_widths_sapin(&mut self, ctx: &mut LayoutContext) {
 
         debug!("FlowContext: assigning widths for f%?", self.id());
         match *self {
-            BlockFlow(ref mut info)  => info.assign_widths_block(ctx),
+            BlockFlow(ref mut info)  => info.assign_widths_block_sapin(ctx),
             InlineFlow(ref mut info) => info.assign_widths_inline(ctx),
-            FloatFlow(ref mut info)  => info.assign_widths_float(),
-            _ => fail!(fmt!("Tried to assign_widths of flow: f%d", self.id()))
+            FloatFlow(ref mut info)  => info.assign_widths_float_sapin(),
+            _ => fail!(fmt!("Tried to assign_widths_sapin of flow: f%d", self.id()))
         }
-    }
+    }    
 
-    pub fn assign_height(&mut self, ctx: &mut LayoutContext) {
+    pub fn assign_height_sapin(&mut self, ctx: &mut LayoutContext) {
 
         debug!("FlowContext: assigning height for f%?", self.id());
         match *self {
-            BlockFlow(ref mut info)  => info.assign_height_block(ctx),
+            BlockFlow(ref mut info)  => info.assign_height_block_sapin(ctx),
             InlineFlow(ref mut info) => info.assign_height_inline(ctx),
-            FloatFlow(ref mut info)  => info.assign_height_float(ctx),
-            _ => fail!(fmt!("Tried to assign_height of flow: f%d", self.id()))
+            FloatFlow(ref mut info)  => info.assign_height_float_sapin(ctx),
+            _ => fail!(fmt!("Tried to assign_height_sapin of flow: f%d", self.id()))
         }
     }
 
     pub fn assign_height_inorder(&mut self, ctx: &mut LayoutContext) {
         match *self {
-            BlockFlow(ref mut info)  => info.assign_height_inorder_block(ctx),
+            BlockFlow(ref mut info)  => info.assign_height_inorder_block_sapin(ctx),
             InlineFlow(ref mut info) => info.assign_height_inorder_inline(ctx),
             FloatFlow(ref mut info)  => info.assign_height_inorder_float(),
             _ => fail!(fmt!("Tried to assign_height of flow: f%d", self.id()))

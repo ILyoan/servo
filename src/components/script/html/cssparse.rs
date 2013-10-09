@@ -55,13 +55,13 @@ pub fn spawn_css_parser(provenance: StylesheetProvenance,
 fn data_stream(provenance: StylesheetProvenance, resource_task: ResourceTask) -> (DataStream, Option<~str>) {
     match provenance {
         UrlProvenance(url) => {
-            //printfln!("cssparse: UrlProvenance(loading stylesheet): %s", url.to_str());
+            printfln!("cssparse: UrlProvenance(loading stylesheet): %s", url.to_str());
             let (input_port, input_chan) = comm::stream();
             resource_task.send(Load(url, input_chan));
             (resource_port_to_data_stream(input_port), None)
         }
         InlineProvenance(_, data) => {
-            //printfln!("cssparse: InlineProvenance(loading stylesheet): %s", data.clone());
+            printfln!("cssparse: InlineProvenance(loading stylesheet): %s", data.clone());
             (data_to_data_stream(data.to_owned()), Some(data.to_owned()))
         }
     }

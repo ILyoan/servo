@@ -634,18 +634,6 @@ impl InlineFlowData {
             }
             //assert!(slack_width >= Au(0), "Too many boxes on line");
 
-            // Get the text alignment.
-            // TODO(Issue #222): use 'text-align' property from InlineFlow's
-            // block container, not from the style of the first box child.
-            let linebox_align;
-            if line.range.begin() < self.boxes.len() {
-                let first_box = self.boxes[line.range.begin()];
-                linebox_align = first_box.text_align();
-            } else {
-                // Nothing to lay out, so assume left alignment.
-                linebox_align = CSSTextAlignLeft;
-            }
-
             // ymin
             let linebox_align_sapin;
             if line.range.begin() < self.boxes.len() {
@@ -656,38 +644,7 @@ impl InlineFlowData {
                 linebox_align_sapin = text_align::left;
             }
 
-            // Set the box x positions
             let mut offset_x = line.bounds.origin.x;
-            match linebox_align {
-                // So sorry, but justified text is more complicated than shuffling linebox coordinates.
-                // TODO(Issue #213): implement `text-align: justify`
-                CSSTextAlignLeft | CSSTextAlignJustify => {
-                    for i in line.range.eachi() {
-                        do self.boxes[i].with_mut_base |base| {
-                            base.position.origin.x = offset_x;
-                            offset_x = offset_x + base.position.size.width;
-                        }
-                    }
-                }
-                CSSTextAlignCenter => {
-                    offset_x = offset_x + slack_width.scale_by(0.5f);
-                    for i in line.range.eachi() {
-                        do self.boxes[i].with_mut_base |base| {
-                            base.position.origin.x = offset_x;
-                            offset_x = offset_x + base.position.size.width;
-                        }
-                    }
-                }
-                CSSTextAlignRight => {
-                    offset_x = offset_x + slack_width;
-                    for i in line.range.eachi() {
-                        do self.boxes[i].with_mut_base |base| {
-                            base.position.origin.x = offset_x;
-                            offset_x = offset_x + base.position.size.width;
-                        }
-                    }
-                }
-            };
 
             // ymin
             match linebox_align_sapin {

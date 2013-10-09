@@ -64,7 +64,7 @@ impl FloatFlowData {
 }
 
 impl FloatFlowData {
-    pub fn bubble_widths_float(&mut self, ctx: &LayoutContext) {
+    pub fn bubble_widths_float_sapin(&mut self, ctx: &LayoutContext) {
         let mut min_width = Au(0);
         let mut pref_width = Au(0);
         let mut num_floats = 0;
@@ -84,13 +84,7 @@ impl FloatFlowData {
 
 
         self.box.map(|&box| {
-            let style = box.style();
             let style_sapin = box.style_sapin(); 
-
-            do box.with_model |model| {
-                model.compute_borders(style)
-            }
-
             do box.with_model |model| {
                 model.compute_borders_sapin(style_sapin)
             }
@@ -101,9 +95,9 @@ impl FloatFlowData {
 
         self.common.min_width = min_width;
         self.common.pref_width = pref_width;
-    }
+    }    
 
-    pub fn assign_widths_float(&mut self) { 
+    pub fn assign_widths_float_sapin(&mut self) { 
         debug!("assign_widths_float: assigning width for flow %?",  self.common.id);
         // position.size.width is set by parent even though we don't know
         // position.origin yet.
@@ -115,30 +109,13 @@ impl FloatFlowData {
         self.common.is_inorder = false;
 
         for &box in self.box.iter() {
-            let style = box.style();
             let style_sapin = box.style_sapin();
 
             do box.with_model |model| {
                 // Can compute padding here since we know containing block width.
-                model.compute_padding(style, remaining_width);
-
                 model.compute_padding_sapin(style_sapin, remaining_width);
 
                 // Margins for floats are 0 if auto.
-                let margin_top = MaybeAuto::from_margin(style.margin_top(),
-                                                        remaining_width,
-                                                        style.font_size()).specified_or_zero();
-                let margin_bottom = MaybeAuto::from_margin(style.margin_bottom(),
-                                                           remaining_width,
-                                                           style.font_size()).specified_or_zero();
-                let margin_left = MaybeAuto::from_margin(style.margin_left(),
-                                                         remaining_width,
-                                                         style.font_size()).specified_or_zero();
-                let margin_right = MaybeAuto::from_margin(style.margin_right(),
-                                                          remaining_width,
-                                                          style.font_size()).specified_or_zero();
-
-
                 let margin_top = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_top,
                                                               remaining_width,
                                                               style_sapin.Font.font_size).specified_or_zero();
@@ -156,10 +133,6 @@ impl FloatFlowData {
                                                   geometry::max(self.common.min_width, 
                                                                 remaining_width));
 
-
-                let width = MaybeAuto::from_width(style.width(), 
-                                                  remaining_width,
-                                                  style.font_size()).specified_or_default(shrink_to_fit);
                 let width = MaybeAuto::from_width_sapin(style_sapin.Box.width, 
                                                   remaining_width,
                                                   style_sapin.Font.font_size).specified_or_default(shrink_to_fit);
@@ -246,8 +219,8 @@ impl FloatFlowData {
         self.common.floats_out = self.common.floats_in.add_float(&info);
         self.rel_pos = self.common.floats_out.last_float_pos();
     }
-
-    pub fn assign_height_float(&mut self, ctx: &mut LayoutContext) {
+    
+    pub fn assign_height_float_sapin(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_height_float: assigning height for float %?", self.common.id);
         let has_inorder_children = self.common.num_floats > 0;
         if has_inorder_children {
@@ -301,10 +274,6 @@ impl FloatFlowData {
         
         //TODO(eatkinson): compute heights properly using the 'height' property.
         for &box in self.box.iter() {
-            let height_prop = 
-                MaybeAuto::from_height(box.style().height(),
-                                       Au(0),
-                                       box.style().font_size()).specified_or_zero();
             let height_prop = 
                 MaybeAuto::from_height_sapin(box.style_sapin().Box.height,
                                              Au(0),

@@ -174,7 +174,7 @@ impl BlockFlowData {
     ///
     /// Dual boxes consume some width first, and the remainder is assigned to all child (block)
     /// contexts.
-    pub fn assign_widths_block(&mut self, ctx: &LayoutContext) {
+    pub fn assign_widths_block_sapin(&mut self, ctx: &LayoutContext) {
         debug!("assign_widths_block: assigning width for flow %?",  self.common.id);
         if self.is_root {
             debug!("Setting root position");
@@ -189,41 +189,25 @@ impl BlockFlowData {
         let mut x_offset = Au(0);
 
         for &box in self.box.iter() {
-            let style = box.style();
-
             let style_sapin = box.style_sapin();
 
             do box.with_model |model| {
                 //Can compute border width here since it doesn't depend on anything
-                model.compute_borders(style);
                 model.compute_borders_sapin(style_sapin);
 
                 // Can compute padding here since we know containing block width.
-                model.compute_padding(style, remaining_width);
                 model.compute_padding_sapin(style_sapin, remaining_width);
 
                 // Margins are 0 right now so model.noncontent_width() is just borders + padding.
                 let available_width = remaining_width - model.noncontent_width();
 
                 // Top and bottom margins for blocks are 0 if auto.
-                let margin_top = MaybeAuto::from_margin(style.margin_top(),
-                                                        remaining_width,
-                                                        style.font_size()).specified_or_zero();
-                let margin_bottom = MaybeAuto::from_margin(style.margin_bottom(),
-                                                           remaining_width,
-                                                           style.font_size()).specified_or_zero();
-
                 let margin_top = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_top,
                                                               remaining_width,
                                                               style_sapin.Font.font_size).specified_or_zero();
                 let margin_bottom = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_bottom,
                                                                  remaining_width,
                                                                  style_sapin.Font.font_size).specified_or_zero();
-
-                let (width, margin_left, margin_right) =
-                    (MaybeAuto::from_width(style.width(), remaining_width, style.font_size()),
-                     MaybeAuto::from_margin(style.margin_left(), remaining_width, style.font_size()),
-                     MaybeAuto::from_margin(style.margin_right(), remaining_width, style.font_size()));
 
                 let (width, margin_left, margin_right) =
                     (MaybeAuto::from_width_sapin(style_sapin.Box.width, remaining_width, style_sapin.Font.font_size),
@@ -269,24 +253,24 @@ impl BlockFlowData {
             }
         }
     }
-
-    pub fn assign_height_inorder_block(&mut self, ctx: &mut LayoutContext) {
+  
+    pub fn assign_height_inorder_block_sapin(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_height_inorder_block: assigning height for block %?", self.common.id);
-        self.assign_height_block_base(ctx, true);
+        self.assign_height_block_base_sapin(ctx, true);
     }
 
-    pub fn assign_height_block(&mut self, ctx: &mut LayoutContext) {
+    pub fn assign_height_block_sapin(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_height_block: assigning height for block %?", self.common.id);
         // This is the only case in which a block flow can start an inorder
         // subtraversal.
         if self.is_root && self.common.num_floats > 0 {
-            self.assign_height_inorder_block(ctx);
+            self.assign_height_inorder_block_sapin(ctx);
             return;
         }
-        self.assign_height_block_base(ctx, false);
+        self.assign_height_block_base_sapin(ctx, false);
     }
 
-    fn assign_height_block_base(&mut self, ctx: &mut LayoutContext, inorder: bool) {
+    fn assign_height_block_base_sapin(&mut self, ctx: &mut LayoutContext, inorder: bool) {
         let mut cur_y = Au(0);
         let mut clearance = Au(0);
         let mut top_offset = Au(0);
@@ -421,13 +405,7 @@ impl BlockFlowData {
         };
 
         for &box in self.box.iter() {
-            let style = box.style();
-
             let style_sapin = box.style_sapin();
-
-            let maybe_height = MaybeAuto::from_height(style.height(), Au(0), style.font_size());
-            let maybe_height = maybe_height.specified_or_zero();
-
             let maybe_height = MaybeAuto::from_height_sapin(style_sapin.Box.height, Au(0), style_sapin.Font.font_size);
             let maybe_height = maybe_height.specified_or_zero();
 
@@ -462,7 +440,6 @@ impl BlockFlowData {
             self.common.floats_out = self.common.floats_in.clone();
         }
     }
-
     pub fn build_display_list_block<E:ExtraDisplayListData>(&mut self,
                                                             builder: &DisplayListBuilder,
                                                             dirty: &Rect<Au>,
@@ -483,10 +460,10 @@ impl BlockFlowData {
                 box.with_model(|model| model.noncontent_height())
             };
             do self.common.node.with_mut_iframe_element |iframe_element| {
-                iframe_element.size.get_mut_ref().set_rect(Rect(Point2D(to_frac_px(x) as f32,
-                                                                        to_frac_px(y) as f32),
-                                                                Size2D(to_frac_px(w) as f32,
-                                                                       to_frac_px(h) as f32)));
+                iframe_element.size.get_mut_ref().set_rect(Rect(Point2D(*x as f32,
+                                                                        *y as f32),
+                                                                Size2D(*x as f32,
+                                                                       *h as f32)));
             }
         }
 

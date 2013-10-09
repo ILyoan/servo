@@ -62,7 +62,7 @@ pub mod specified {
         }
         #[inline]
         pub fn from_px(px_value: Float) -> Length {
-            Au((px_value * AU_PER_PX) as Integer)
+            Au((px_value * AU_PER_PX) as Integer) // NumCase::from(px * 60)
         }
     }
 

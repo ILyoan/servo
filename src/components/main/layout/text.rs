@@ -121,6 +121,7 @@ impl TextRunScanner {
     /// N.B. `in_boxes` is passed by reference, since the old code used a `DVec`. The caller is
     /// responsible for swapping out the list. It is not clear to me (pcwalton) that this is still
     /// necessary.
+    /*
     pub fn flush_clump_to_list(&mut self,
                                ctx: &LayoutContext,
                                flow: &mut FlowContext,
@@ -273,7 +274,7 @@ impl TextRunScanner {
 
         new_whitespace
     } // End of `flush_clump_to_list`.
-
+*/
     pub fn flush_clump_to_list_sapin(&mut self,
                                ctx: &LayoutContext,
                                flow: &mut FlowContext,
