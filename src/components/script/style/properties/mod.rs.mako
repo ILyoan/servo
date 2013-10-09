@@ -723,6 +723,32 @@ impl PropertyDeclaration {
     pub fn parse(name: &str, value: &[ComponentValue],
                  result_list: &mut ~[PropertyDeclaration]) -> bool {
         match name.to_ascii_lower().as_slice() {
+	    "margin" => {
+		result_list.push(margin_top_declaration(
+                    match longhands::margin_top::parse_declared(value) {
+                        Some(value) => value,
+                        None => return false,
+                    }
+                ));
+		result_list.push(margin_right_declaration(
+                    match longhands::margin_right::parse_declared(value) {
+                        Some(value) => value,
+                        None => return false,
+                    }
+                ));
+		result_list.push(margin_bottom_declaration(
+                    match longhands::margin_bottom::parse_declared(value) {
+                        Some(value) => value,
+                        None => return false,
+                    }
+                ));
+		result_list.push(margin_left_declaration(
+                    match longhands::margin_left::parse_declared(value) {
+                        Some(value) => value,
+                        None => return false,
+                    }
+                ));
+	    }
             % for property in LONGHANDS:
                 "${property.name}" => result_list.push(${property.ident}_declaration(
                     match longhands::${property.ident}::parse_declared(value) {

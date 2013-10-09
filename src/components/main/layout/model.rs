@@ -51,14 +51,22 @@ impl MaybeAuto {
         match margin {
             CSSMarginAuto => Auto,
             CSSMarginPercentage(percent) => Specified(containing_width.scale_by(percent/100.0)),
-            CSSMarginLength(length) => Specified(from_length(length, font_size))
+            CSSMarginLength(length) => {
+		//println(fmt!("In from_marging(), from_length(length, font_size) = %?", from_length(length, font_size)));
+		Specified(from_length(length, font_size))
+	    }
         }
     }
 
     pub fn from_margin_sapin(margin: computed::LengthOrPercentageOrAuto, _containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
         match margin {
-            computed::LPA_Length(computed::Length(length)) => Specified(Au::from_frac_px(length as float)),
-            computed::LPA_Percentage(value) => Specified(Au::from_frac_px(value as float)),
+            computed::LPA_Length(computed::Length(length)) => {
+		//println(fmt!("In from_marging_sapin(), temp = %?", Au(length as i32)));
+		Specified(Au(length as i32))
+	    }
+            computed::LPA_Percentage(value) => {
+		Specified(Au::from_frac_px(value as float))
+	    }
             computed::LPA_Auto => Auto
         }
     }
