@@ -282,6 +282,9 @@ impl TextRunScanner {
         let inline = flow.inline();
         let in_boxes = &inline.boxes;
 
+        printfln!("# flush_clump_to_list_sapin");
+
+
         assert!(self.clump.length() > 0);
 
         debug!("TextRunScanner: flushing boxes in range=%?", self.clump);

@@ -102,7 +102,7 @@ impl FontHandleMethods for FontHandle {
 
         #[fixed_stack_segment]
          fn create_face_from_buffer(lib: FT_Library,
-                                    cbuf: *u8, cbuflen: uint, pt_size: float) 
+                                    cbuf: *u8, cbuflen: uint, pt_size: float)
              -> Result<FT_Face, ()> {
 
              unsafe {
@@ -110,7 +110,7 @@ impl FontHandleMethods for FontHandle {
                  let face_index = 0 as FT_Long;
                  let result = FT_New_Memory_Face(lib, cbuf, cbuflen as FT_Long,
                                                  face_index, ptr::to_mut_unsafe_ptr(&mut face));
-                 
+
                  if !result.succeeded() || face.is_null() {
                      return Err(());
                  }

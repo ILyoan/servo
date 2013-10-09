@@ -175,6 +175,8 @@ impl Shaper {
 
             // Set points-per-em. if zero, performs no hinting in that direction.
             let pt_size = font.style.pt_size;
+            printfln!("===> pt_size: %?", pt_size);
+
             hb_font_set_ppem(hb_font, pt_size as c_uint, pt_size as c_uint);
 
             // Set scaling. Note that this takes 16.16 fixed point.
@@ -189,12 +191,14 @@ impl Shaper {
             hb_font_funcs_set_glyph_h_advance_func(hb_funcs, glyph_h_advance_func, null(), None);
             hb_font_set_funcs(hb_font, hb_funcs, font_ptr as *c_void, None);
 
-            Shaper {
+            let s = Shaper {
                 font: font,
                 hb_face: hb_face,
                 hb_font: hb_font,
                 hb_funcs: hb_funcs,
-            }
+            };
+            printfln!("===> shaper: %?", s);
+            s
         }
     }
 

@@ -30,13 +30,15 @@ pub struct BoxModel {
 
 fn from_length(length: Length, font_size: CSSFontSize) -> Au {
     match length {
-        Px(v) => Au::from_frac_px(v),
-        Em(em) => {
-            match font_size {
-                CSSFontSizeLength(Px(v)) => Au::from_frac_px(em * v),
-                _ => fail!("expected non-relative font size")
-            }
-        }
+        // Px(v) => Au::from_frac_px(v),
+        // Em(em) => {
+            // match font_size {
+                // CSSFontSizeLength(Px(v)) => Au::from_frac_px(em * v),
+                // _ => fail!("expected non-relative font size")
+            // }
+        // }
+        Px(v) => Au(v as i32), // ryanc: Px and Em contains Au. Px and Em should not be used.
+        Em(v) => Au(v as i32),
     }
 }
 
@@ -57,8 +59,8 @@ impl MaybeAuto {
 
     pub fn from_margin_sapin(margin: computed::LengthOrPercentageOrAuto, _containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
         match margin {
-            computed::LPA_Length(computed::Length(length)) => Specified(Au::from_frac_px(length as float)),
-            computed::LPA_Percentage(value) => Specified(Au::from_frac_px(value as float)),
+            computed::LPA_Length(computed::Length(length)) => Specified(Au(length as i32)),
+            computed::LPA_Percentage(value) => Specified(Au(value as i32)),
             computed::LPA_Auto => Auto
         }
     }
@@ -70,11 +72,11 @@ impl MaybeAuto {
             CSSWidthLength(length) => Specified(from_length(length, font_size))
         }
     }
-    
+
     pub fn from_width_sapin(width: computed::LengthOrPercentageOrAuto, _containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
         match width {
-            computed::LPA_Length(computed::Length(length)) => Specified(Au::from_frac_px(length as float)),
-            computed::LPA_Percentage(value) => Specified(Au::from_frac_px(value as float)),
+            computed::LPA_Length(computed::Length(length)) => Specified(Au(length as i32)),
+            computed::LPA_Percentage(value) => Specified(Au(value as i32)),
             computed::LPA_Auto => Auto
         }
     }
@@ -89,11 +91,11 @@ impl MaybeAuto {
 
     pub fn from_height_sapin(height: computed::LengthOrPercentageOrAuto, _cb_height: Au, _font_size: computed::Length) -> MaybeAuto {
         match height {
-            computed::LPA_Length(computed::Length(length)) => Specified(Au::from_frac_px(length as float)),
-            computed::LPA_Percentage(value) => Specified(Au::from_frac_px(value as float)),
+            computed::LPA_Length(computed::Length(length)) => Specified(Au(length as i32)),
+            computed::LPA_Percentage(value) => Specified(Au(value as i32)),
             computed::LPA_Auto => Auto
         }
-    }   
+    }
 
     pub fn specified_or_default(&self, default: Au) -> Au {
         match *self {
@@ -181,7 +183,7 @@ impl BoxModel {
 
     pub fn compute_border_width_sapin(&self, width: computed::Length, _font_size: computed::Length) -> Au {
         match width {
-            computed::Length(length) => Au::from_frac_px(length as float),
+            computed::Length(length) => Au(length as i32),
         }
     }
 
@@ -194,7 +196,7 @@ impl BoxModel {
 
     pub fn compute_padding_length_sapin(&self, padding: computed::LengthOrPercentage, _content_box_width: Au, _font_size: computed::Length) -> Au {
         match padding {
-            computed::LP_Length(computed::Length(length)) => Au::from_frac_px(length as float),
+            computed::LP_Length(computed::Length(length)) => Au(length as i32),
             _ => {
                 error!("Need to cover LP_Percentage")
                 Au::from_frac_px(1f)

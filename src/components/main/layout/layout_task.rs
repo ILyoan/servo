@@ -319,6 +319,10 @@ impl LayoutTask {
                 true
             };
 
+            debug!("after bubble_widths: constructed Flow tree");
+            debug!("%?", layout_root.dump());
+
+
             // FIXME: We want to do
             //     for flow in layout_root.traverse_preorder_prune(|f| f.restyle_damage().lacks(Reflow))
             // but FloatContext values can't be reused, so we need to recompute them every time.
@@ -329,6 +333,10 @@ impl LayoutTask {
                 true
             };
 
+            debug!("after assign_widths: constructed Flow tree");
+            debug!("%?", layout_root.dump());
+
+
             // For now, this is an inorder traversal
             // FIXME: prune this traversal as well
             debug!("assigning height");
@@ -336,6 +344,10 @@ impl LayoutTask {
                 flow.assign_height(&mut layout_ctx);
                 true
             };
+
+            debug!("after assign_height: constructed Flow tree");
+            debug!("%?", layout_root.dump());
+
         }
 
         // Build the display list if necessary, and send it to the renderer.

@@ -131,7 +131,6 @@ pub struct UnscannedTextRenderBox {
     // this box can merge with another render box.
     font_style: Option<FontStyle>,
     text_decoration: Option<CSSTextDecoration>,
-//    text_decoration_sapin: Option<CSSTextDecoration>,
 }
 
 impl UnscannedTextRenderBox {
@@ -278,7 +277,7 @@ impl RenderBox {
     pub fn can_merge_with_box(&self, other: RenderBox) -> bool {
         match (self, &other) {
             (&UnscannedTextRenderBoxClass(*), &UnscannedTextRenderBoxClass(*)) => {
-                self.font_style() == other.font_style() && self.text_decoration() == other.text_decoration()
+                self.font_style_sapin() == other.font_style() && self.text_decoration_sapin() == other.text_decoration()
             },
             (&TextRenderBoxClass(text_box_a), &TextRenderBoxClass(text_box_b)) => {
                 managed::ptr_eq(text_box_a.run, text_box_b.run)
@@ -395,31 +394,30 @@ impl RenderBox {
             if(!base.node.is_element()) {
                 Au(0)
             } else {
-                let style = self.style();
+                // let style = self.style();
+
+                // let font_size = style.font_size();
+                // let width = MaybeAuto::from_width(style.width(),
+                                                  // Au(0),
+                                                  // font_size).specified_or_zero();
+                // let margin_left = MaybeAuto::from_margin(style.margin_left(),
+                                                         // Au(0),
+                                                         // font_size).specified_or_zero();
+                // let margin_right = MaybeAuto::from_margin(style.margin_right(),
+                                                          // Au(0),
+                                                          // font_size).specified_or_zero();
+                // let padding_left = base.model.compute_padding_length(style.padding_left(),
+                                                                     // Au(0),
+                                                                     // font_size);
+                // let padding_right = base.model.compute_padding_length(style.padding_right(),
+                                                                      // Au(0),
+                                                                      // font_size);
+                // let border_left = base.model.compute_border_width(style.border_left_width(),
+                                                                  // font_size);
+                // let border_right = base.model.compute_border_width(style.border_right_width(),
+                                                                   // font_size);
 
                 let style_sapin = self.style_sapin();
-
-                let font_size = style.font_size();
-                let width = MaybeAuto::from_width(style.width(),
-                                                  Au(0),
-                                                  font_size).specified_or_zero();
-                let margin_left = MaybeAuto::from_margin(style.margin_left(),
-                                                         Au(0),
-                                                         font_size).specified_or_zero();
-                let margin_right = MaybeAuto::from_margin(style.margin_right(),
-                                                          Au(0),
-                                                          font_size).specified_or_zero();
-                let padding_left = base.model.compute_padding_length(style.padding_left(),
-                                                                     Au(0),
-                                                                     font_size);
-                let padding_right = base.model.compute_padding_length(style.padding_right(),
-                                                                      Au(0),
-                                                                      font_size);
-                let border_left = base.model.compute_border_width(style.border_left_width(),
-                                                                  font_size);
-                let border_right = base.model.compute_border_width(style.border_right_width(),
-                                                                   font_size);
-
                 let font_size = style_sapin.Font.font_size;
                 let width = MaybeAuto::from_width_sapin(style_sapin.Box.width,
                                                   Au(0),
@@ -883,7 +881,6 @@ impl RenderBox {
     pub fn font_style(&self) -> FontStyle {
         fn get_font_style(element: AbstractNode<LayoutView>) -> FontStyle {
             let my_style = element.style();
-            let my_style_sapin = element.style_sapin();
 
             debug!("(font style) start: %?", element.type_id());
 
@@ -899,11 +896,11 @@ impl RenderBox {
                 }
             };
 
-            let font_families = do my_style_sapin.Font.font_family.map |family| {
-                match *family {
-                    font_family::FamilyName(ref name) => name.to_str()
-                }
-            };
+            // let font_families = do my_style_sapin.Font.font_family.map |family| {
+                // match *family {
+                    // font_family::FamilyName(ref name) => name.to_str()
+                // }
+            // };
 
             let font_families = font_families.connect(", ");
             debug!("(font style) font families: `%s`", font_families);
@@ -914,22 +911,12 @@ impl RenderBox {
                 CSSFontSizeLength(Em(length)) => length * 16f,
                 _ => 16f // px units
             };
-
-            let font_size = match my_style_sapin.Font.font_size {
-                computed::Length(length) => length as float
-            };
             debug!("(font style) font size: `%fpx`", font_size);
 
             let (italic, oblique) = match my_style.font_style() {
                 CSSFontStyleNormal => (false, false),
                 CSSFontStyleItalic => (true, false),
                 CSSFontStyleOblique => (false, true),
-            };
-
-            let (italic, oblique) = match my_style_sapin.Font.font_style {
-                font_style::normal => (false, false),
-                font_style::italic => (true, false),
-                font_style::oblique => (false, true),
             };
 
             FontStyle {
@@ -983,9 +970,9 @@ impl RenderBox {
             debug!("(font style) font families: `%s`", font_families);
 
             let font_size = match my_style_sapin.Font.font_size {
-                computed::Length(length) => length as float
+                computed::Length(length) => length/60
             };
-            debug!("(font style) font size: `%fpx`", font_size);
+            debug!("(font style) font size: `%?px`", font_size);
 
             let (italic, oblique) = match my_style_sapin.Font.font_style {
                 font_style::normal => (false, false),
@@ -994,7 +981,7 @@ impl RenderBox {
             };
 
             FontStyle {
-                pt_size: font_size,
+                pt_size: font_size as float,
                 weight: FontWeight300,
                 italic: italic,
                 oblique: oblique,
@@ -1039,7 +1026,7 @@ impl RenderBox {
     pub fn line_height(&self) -> CSSLineHeight {
         self.nearest_ancestor_element().style().line_height()
     }
-    
+
     pub fn line_height_sapin(&self) -> line_height::ComputedValue {
         self.nearest_ancestor_element().style_sapin().Box.line_height
     }
@@ -1128,7 +1115,7 @@ impl RenderBox {
                 _ => true,
             };
 
-            let position = element.style().position();
+            // let position = element.style().position();
             let position_sapin = element.style_sapin().Box.position; // ymin
             let float_sapin = element.style_sapin().Box.float; // ymin
 
@@ -1140,7 +1127,7 @@ impl RenderBox {
             //printfln!("text_deco_sapin: %?", text_decoration_sapin);
 
             //let text_decoration = element.style().text_decoration();
-            //printfln!("text_deco: %?", text_decoration);            
+            //printfln!("text_deco: %?", text_decoration);
 
             // text_deco_sapin: script::style::properties::longhands::text_decoration::SpecifiedValue{underline: false, overline: true, line_through: false}
             // text_deco: CSSTextDecorationOverline ...
@@ -1236,7 +1223,7 @@ impl RenderBox {
         let (top_style, right_style, bottom_style, left_style) = (self.style().border_top_style(), self.style().border_right_style(), self.style().border_bottom_style(), self.style().border_left_style());
         //let (top_color, right_color, bottom_color, left_color) = (color_exchange1(self.style_sapin().Border.border_top_color), color_exchange1(self.style_sapin().Border.border_right_color), color_exchange1(self.style_sapin().Border.border_bottom_color), color_exchange1(self.style_sapin().Border.border_left_color));
         //let (top_style, right_style, bottom_style, left_style) = (self.style_sapin().Border.border_top_style, self.style_sapin().Border.border_right_style, self.style_sapin().Border.border_bottom_style, self.style_sapin().Border.border_left_style);
-        
+
 	// Append the border to the display list.
         do list.with_mut_ref |list| {
             let border_display_item = ~BorderDisplayItem {
@@ -1267,11 +1254,11 @@ fn color_exchange1(input: Color) -> newcss::color::Color {
 	let mut output = newcss::color::Color { red: 0, green: 0, blue: 0, alpha: 0f };
 	match input {
                 CurrentColor => {}
-                RGBA(rgba) => { 
-			output.red = rgba.red as u8; 
-			output.green = rgba.green as u8; 
-			output.blue = rgba.blue as u8; 
-			output.alpha = rgba.alpha as float; 
+                RGBA(rgba) => {
+			output.red = rgba.red as u8;
+			output.green = rgba.green as u8;
+			output.blue = rgba.blue as u8;
+			output.alpha = rgba.alpha as float;
 		}
         };
 	output

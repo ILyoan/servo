@@ -124,6 +124,7 @@ impl Stylist {
             }
         }
 
+        printfln!("# style: %?", computed_values);
         let cell = Cell::new(computed_values);
         element.write_layout_data(|data| data.style_sapin = Some(cell.take()));
     }

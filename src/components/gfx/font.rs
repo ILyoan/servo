@@ -223,7 +223,7 @@ impl RunMetrics {
         // ascent+descent and advance is sometimes too generous and
         // looking at actual glyph extents can yield a tighter box.
 
-        RunMetrics { 
+        RunMetrics {
             advance_width: advance,
             bounding_box: bounds,
             ascent: ascent,
@@ -261,7 +261,7 @@ impl Font {
         } else {
             return Err(handle.unwrap_err());
         };
-        
+
         let metrics = handle.get_metrics();
         // TODO(Issue #179): convert between specified and used font style here?
 
@@ -422,7 +422,7 @@ impl Font {
 
         let glyphbuf = struct__AzGlyphBuffer {
             mGlyphs: vec::raw::to_ptr(azglyphs),
-            mNumGlyphs: azglyph_buf_len as uint32_t            
+            mNumGlyphs: azglyph_buf_len as uint32_t
         };
 
         unsafe {
@@ -445,6 +445,7 @@ impl Font {
                 advance = advance + glyph.advance();
             }
         }
+        printfln!("===> advance: %?", advance);
         RunMetrics::new(advance, self.metrics.ascent, self.metrics.descent)
     }
 
