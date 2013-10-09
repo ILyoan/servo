@@ -1247,17 +1247,17 @@ impl RenderBox {
 }
 
 fn color_exchange1(input: Color) -> newcss::color::Color {
-	let mut output = newcss::color::Color { red: 0, green: 0, blue: 0, alpha: 0f };
-	match input {
-                CurrentColor => {}
-                RGBA(rgba) => { 
-			output.red = rgba.red as u8; 
-			output.green = rgba.green as u8; 
-			output.blue = rgba.blue as u8; 
-			output.alpha = rgba.alpha as float; 
-		}
-        };
-	output
+    let mut output = newcss::color::Color { red: 0, green: 0, blue: 0, alpha: 0f };
+    match input {
+        CurrentColor => {}
+        RGBA(rgba) => { 
+            output.red = (rgba.red * 255.0) as u8; 
+            output.green = (rgba.green * 255.0) as u8; 
+            output.blue = (rgba.blue * 255.0) as u8; 
+            output.alpha = rgba.alpha as float; 
+        }
+    };
+    output
 }
 
 fn color_exchange2(input: RGBA) -> newcss::color::Color {
