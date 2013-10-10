@@ -152,6 +152,8 @@ ol, p, ul, center,
     p               {display: block; unicode-bidi: embed}
     li              { display: list-item }
     head            { display: none }
+    span            { display: inline }
+    a               { display: inline }
     table           { display: table }
     tr              { display: table-row }
     thead           { display: table-header-group }
