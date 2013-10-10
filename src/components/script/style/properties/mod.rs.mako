@@ -653,6 +653,17 @@ pub mod shorthands {
         }
     </%self:shorthand>
 
+    <%self:shorthand name="font" sub_properties="font-size">
+        let mut iter = input.skip_whitespace();
+        let font_size = iter.next();
+        match font_size {
+            Some(font_size) => Some(Longhands {
+                font_size: font_size::from_component_value(font_size)
+            }),
+            None => None
+        }
+    </%self:shorthand>
+
     ${four_sides_shorthand("margin", "margin-%s", "specified::LengthOrPercentageOrAuto::parse")}
     ${four_sides_shorthand("padding", "padding-%s", "specified::LengthOrPercentage::parse_non_negative")}
     ${four_sides_shorthand("border-color", "border-%s-color", "specified::CSSColor::parse")}
