@@ -386,7 +386,8 @@ fn parse_qualified_name(iter: &mut Iter, allow_universal: bool, namespaces: &Nam
             }
         },
         Some(&Delim('|')) => explicit_namespace(iter, allow_universal, Some(~"")),
-	Some(&Delim('.')) => default_namespace(namespaces, None),
+	    Some(&Delim('.')) => default_namespace(namespaces, None),
+	    Some(&IDHash(_)) => default_namespace(namespaces, None),
         _ => return None,
     }
 }
