@@ -152,7 +152,8 @@ ol, p, ul, center,
     h2              {display: block; unicode-bidi: embed}
     p               {display: block; unicode-bidi: embed}
     div             {display: block; unicode-bidi: embed}
-    span            {display: inline; unicode-bidi: embed}
+    span            { display: inline }
+    a               { display: inline; text-decoration: underline; color: blue }
     li              { display: list-item }
     head            { display: none }
     table           { display: table }

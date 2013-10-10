@@ -225,7 +225,7 @@ pub mod longhands {
     ${predefined_type("height", "LengthOrPercentageOrAuto",
                       "computed::LPA_Auto",
                       "parse_non_negative")}
-    
+
     <%self:single_component_value name="vertical-align" inherited="False">
         #[deriving(Clone)]
         pub enum SpecifiedValue {
@@ -294,7 +294,7 @@ pub mod longhands {
             }
         }
     </%self:single_component_value>
-    
+
     <%self:single_component_value name="line-height">
         #[deriving(Clone)]
         pub enum SpecifiedValue {
@@ -385,7 +385,8 @@ pub mod longhands {
         }
         pub type SpecifiedValue = ~[FontFamily];
         pub type ComputedValue = SpecifiedValue;
-        #[inline] pub fn get_initial_value() -> ComputedValue { ~[FamilyName(~"serif")] }
+        //#[inline] pub fn get_initial_value() -> ComputedValue { ~[FamilyName(~"serif")] }
+        #[inline] pub fn get_initial_value() -> ComputedValue { ~[FamilyName(~"sans-serif")] }
         /// <familiy-name>#
         /// <familiy-name> = <string> | [ <ident>+ ]
         /// TODO: <generic-familiy>
@@ -792,6 +793,33 @@ impl PropertyDeclaration {
     pub fn parse(name: &str, value: &[ComponentValue],
                  result_list: &mut ~[PropertyDeclaration]) -> bool {
         match name.to_ascii_lower().as_slice() {
+            "margin" => {
+                result_list.push(margin_top_declaration(
+                    match longhands::margin_top::parse_declared(value) {
+                        Some(value) => value,
+                        None => return false,
+                    }
+                ));
+                result_list.push(margin_right_declaration(
+                    match longhands::margin_right::parse_declared(value) {
+                        Some(value) => value,
+                        None => return false,
+                    }
+                ));
+                result_list.push(margin_bottom_declaration(
+                    match longhands::margin_bottom::parse_declared(value) {
+                        Some(value) => value,
+                        None => return false,
+                    }
+                ));
+                result_list.push(margin_left_declaration(
+                    match longhands::margin_left::parse_declared(value) {
+                        Some(value) => value,
+                        None => return false,
+                    }
+                ));
+            }
+
             % for property in LONGHANDS:
                 "${property.name}" => result_list.push(${property.ident}_declaration(
                     match longhands::${property.ident}::parse_declared(value) {

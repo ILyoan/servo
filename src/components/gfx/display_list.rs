@@ -26,7 +26,7 @@ use servo_net::image::base::Image;
 use servo_util::range::Range;
 use extra::arc::Arc;
 
-use newcss::values::{CSSTextDecorationUnderline, CSSTextDecorationOverline, CSSTextDecorationLineThrough};
+use text::text_run::{CSSTextDecorationUnderline, CSSTextDecorationOverline, CSSTextDecorationLineThrough};
 
 /// A list of rendering operations to be performed.
 pub struct DisplayList<E> {
@@ -165,10 +165,11 @@ impl<E> DisplayItem<E> {
                     },
                     _ => ()
                 }
-                */ 
-                 if new_run.decoration == ~"none" {
-                     // TODO
-                 }
+
+                if new_run.decoration == ~"none" {
+                // TODO
+                }
+                */
             }
 
             ImageDisplayItemClass(ref image_item) => {

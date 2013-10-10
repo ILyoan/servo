@@ -25,7 +25,8 @@ use gfx::display_list::{TextDisplayItemClass};
 use gfx::font::{FontStyle, FontWeight300};
 use gfx::geometry::Au;
 use gfx::text::text_run::TextRun;
-use newcss::color::{Color, rgb};
+use gfx::text::text_run::{CSSTextDecoration, CSSTextDecorationNone, CSSTextDecorationUnderline, CSSTextDecorationOverline, CSSTextDecorationLineThrough, CSSTextDecorationBlink};
+use newcss::color::{/*Color,*/ rgb};
 use newcss;
 use newcss::complete::CompleteStyle;
 use newcss::units::{Em, Px};
@@ -34,21 +35,19 @@ use newcss::values::{CSSBorderStyleDashed, CSSBorderStyleSolid};
 use newcss::values::{CSSClearNone, CSSClearLeft, CSSClearRight, CSSClearBoth};
 use newcss::values::{CSSFontFamilyFamilyName, CSSFontFamilyGenericFamily};
 use newcss::values::{CSSFontSizeLength, CSSFontStyleItalic, CSSFontStyleNormal};
-use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSTextDecoration, CSSLineHeight, CSSVerticalAlign};
-use newcss::values::{CSSFloatNone, CSSPositionStatic};
-use newcss::values::{CSSTextDecorationNone, CSSTextDecorationUnderline, CSSTextDecorationOverline, CSSTextDecorationLineThrough, CSSTextDecorationBlink};
-use newcss::values::{CSSDisplayInlineBlock, CSSDisplayInlineTable};
+use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSLineHeight, CSSVerticalAlign};
+// use newcss::values::{CSSFloatNone, CSSPositionStatic};
+// use newcss::values::{CSSDisplayInlineBlock, CSSDisplayInlineTable};
 use script::dom::node::{AbstractNode, LayoutView};
 use servo_net::image::holder::ImageHolder;
 use servo_net::local_image_cache::LocalImageCache;
 use servo_util::range::*;
 use extra::url::Url;
-
 use script::style::properties::common_types::computed;
 use script::style::properties::ComputedValues;
 use script::style::properties::longhands::{clear, font_family, font_style, vertical_align};
-use script::style::properties::longhands::{line_height, text_align, text_decoration};
-use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
+use script::style::properties::longhands::{line_height, text_align/*, text_decoration*/};
+//use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
 use script::style::properties::longhands::{display, position, float};
 use cssparser::*;
 use gfx::geometry;
@@ -278,7 +277,7 @@ impl RenderBox {
     pub fn can_merge_with_box(&self, other: RenderBox) -> bool {
         match (self, &other) {
             (&UnscannedTextRenderBoxClass(*), &UnscannedTextRenderBoxClass(*)) => {
-                self.font_style_sapin() == other.font_style() && self.text_decoration_sapin() == other.text_decoration()
+                self.font_style_sapin() == other.font_style_sapin() && self.text_decoration_sapin() == other.text_decoration_sapin()
             },
             (&TextRenderBoxClass(text_box_a), &TextRenderBoxClass(text_box_b)) => {
                 managed::ptr_eq(text_box_a.run, text_box_b.run)
@@ -1042,6 +1041,7 @@ impl RenderBox {
         self.nearest_ancestor_element().style_sapin().Box.vertical_align
     }
 
+    /*
     /// Returns the text decoration of the computed style of the nearest `Element` node
     pub fn text_decoration(&self) -> CSSTextDecoration {
         /// Computes the propagated value of text-decoration, as specified in CSS 2.1 § 16.3.1
@@ -1101,6 +1101,7 @@ impl RenderBox {
             return text_decoration;
         }
     }
+    */
 
     // ymin
     pub fn text_decoration_sapin(&self) -> CSSTextDecoration {

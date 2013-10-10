@@ -963,15 +963,6 @@ impl InlineFlowData {
                     },
                     vertical_align::Length(length) => {
                         let length_offset = match length {
-                            // Em(l) => Au::from_frac_px(cur_box.font_style().pt_size * l),
-                            // Px(l) => Au::from_frac_px(l),
-
-                            // FIXME: ryanc: Em and Px should not be used here
-                            // Assuming l is already in Au.
-                            //Px(l) => Au(l as i32), // FIXME: ryanc: verify
-                            //Em(l) => Au::from_frac_px(cur_box.font_style()_sapin.pt_size * l),
-
-                            // FIXME(sonwow) : is it right?
                             computed::Length(length) => Au(length as i32)
                         };
                         -(length_offset + ascent)

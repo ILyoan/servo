@@ -195,6 +195,18 @@ impl LayoutTask {
 
     fn handle_add_stylesheet2(&mut self, sheet: CSSData) {
         //printfln!("handle_add_stylesheet2");
+        printfln!("handle_add_stylesheet2");
+        let css_data = sheet.data.get_ref().clone();
+        if self.css_data.len() == 0 {
+            printfln!("1css_data: %?", css_data);
+            printfln!("1self.css_data: %?",self.css_data);
+            self.css_data = css_data;
+        } else if (self.css_data != css_data) && (css_data.len() > 0) {
+            printfln!("2css_data: %?", css_data);
+            printfln!("2self.css_data: %?",self.css_data);
+            self.css_data = css_data;
+        }
+
         self.css_data = sheet.data.get_ref().clone();
         self.css_select_ctx.append_sheet(sheet.sheet, OriginAuthor);
     }
