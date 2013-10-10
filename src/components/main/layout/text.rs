@@ -126,7 +126,6 @@ impl TextRunScanner {
                                out_boxes: &mut ~[RenderBox]) -> bool {
         let inline = flow.inline();
         let in_boxes = &inline.boxes;
-        println("flush_clump_to_list");
 
         assert!(self.clump.length() > 0);
 
@@ -144,12 +143,10 @@ impl TextRunScanner {
                 fail!(~"WAT: can't coalesce non-text nodes in flush_clump_to_list()!")
             }
             (true, false) => {
-                println("trye, false");
                 debug!("TextRunScanner: pushing single non-text box in range: %?", self.clump);
                 out_boxes.push(in_boxes[self.clump.begin()]);
             },
             (true, true)  => {
-                println("true, true");
                 let old_box = in_boxes[self.clump.begin()];
                 let text = old_box.raw_text();
                 // let font_style = old_box.font_style();
@@ -182,7 +179,6 @@ impl TextRunScanner {
                 }
             },
             (false, true) => {
-                println("false, true");
                 // TODO(#115): Use the actual CSS `white-space` property of the relevant style.
                 let compression = CompressWhitespaceNewline;
 
