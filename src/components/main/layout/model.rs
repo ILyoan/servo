@@ -7,14 +7,14 @@
 use std::num::Zero;
 use geom::side_offsets::SideOffsets2D;
 use gfx::geometry::Au;
-use newcss::complete::CompleteStyle;
-use newcss::units::{Length, Em, Px};
-use newcss::values::{CSSBorderWidth, CSSBorderWidthLength, CSSBorderWidthMedium};
-use newcss::values::{CSSBorderWidthThick, CSSBorderWidthThin, CSSFontSize, CSSFontSizeLength};
-use newcss::values::{CSSWidth, CSSWidthLength, CSSWidthPercentage, CSSWidthAuto};
-use newcss::values::{CSSHeight, CSSHeightLength, CSSHeightPercentage, CSSHeightAuto};
-use newcss::values::{CSSMargin, CSSMarginLength, CSSMarginPercentage, CSSMarginAuto};
-use newcss::values::{CSSPadding, CSSPaddingLength, CSSPaddingPercentage};
+//use newcss::complete::CompleteStyle;
+//use newcss::units::{Length, Em, Px};
+//use newcss::values::{CSSBorderWidth, CSSBorderWidthLength, CSSBorderWidthMedium};
+//use newcss::values::{CSSBorderWidthThick, CSSBorderWidthThin, CSSFontSize, CSSFontSizeLength};
+//use newcss::values::{CSSWidth, CSSWidthLength, CSSWidthPercentage, CSSWidthAuto};
+//use newcss::values::{CSSHeight, CSSHeightLength, CSSHeightPercentage, CSSHeightAuto};
+//use newcss::values::{CSSMargin, CSSMarginLength, CSSMarginPercentage, CSSMarginAuto};
+//use newcss::values::{CSSPadding, CSSPaddingLength, CSSPaddingPercentage};
 
 use script::style::properties::{ComputedValues};
 use script::style::properties::common_types::{computed};

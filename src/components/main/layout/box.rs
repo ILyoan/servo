@@ -25,7 +25,8 @@ use gfx::display_list::{TextDisplayItemClass};
 use gfx::font::{FontStyle, FontWeight300};
 use gfx::geometry::Au;
 use gfx::text::text_run::TextRun;
-use newcss::color::{Color, rgb};
+use gfx::text::text_run::{CSSTextDecoration, CSSTextDecorationNone, CSSTextDecorationUnderline, CSSTextDecorationOverline, CSSTextDecorationLineThrough, CSSTextDecorationBlink};
+use newcss::color::{/*Color,*/ rgb};
 use newcss;
 use newcss::complete::CompleteStyle;
 use newcss::units::{Em, Px};
@@ -34,10 +35,9 @@ use newcss::values::{CSSBorderStyleDashed, CSSBorderStyleSolid};
 use newcss::values::{CSSClearNone, CSSClearLeft, CSSClearRight, CSSClearBoth};
 use newcss::values::{CSSFontFamilyFamilyName, CSSFontFamilyGenericFamily};
 use newcss::values::{CSSFontSizeLength, CSSFontStyleItalic, CSSFontStyleNormal};
-use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSTextDecoration, CSSLineHeight, CSSVerticalAlign};
-use newcss::values::{CSSFloatNone, CSSPositionStatic};
-use newcss::values::{CSSTextDecorationNone, CSSTextDecorationUnderline, CSSTextDecorationOverline, CSSTextDecorationLineThrough, CSSTextDecorationBlink};
-use newcss::values::{CSSDisplayInlineBlock, CSSDisplayInlineTable};
+use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSLineHeight, CSSVerticalAlign};
+//use newcss::values::{CSSFloatNone, CSSPositionStatic};
+//use newcss::values::{CSSDisplayInlineBlock, CSSDisplayInlineTable};
 use script::dom::node::{AbstractNode, LayoutView};
 use servo_net::image::holder::ImageHolder;
 use servo_net::local_image_cache::LocalImageCache;
@@ -47,11 +47,11 @@ use extra::url::Url;
 use script::style::properties::common_types::computed;
 use script::style::properties::ComputedValues;
 use script::style::properties::longhands::{clear, font_family, font_style};
-use script::style::properties::longhands::{line_height, text_align, text_decoration};
-use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
+use script::style::properties::longhands::{line_height, text_align/*, text_decoration*/};
+//use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
 use script::style::properties::longhands::{display, position, float};
 use cssparser::*;
-use cssparser;
+//use cssparser;
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -280,7 +280,7 @@ impl RenderBox {
         match (self, &other) {
             (&UnscannedTextRenderBoxClass(*), &UnscannedTextRenderBoxClass(*)) => {
 		//self.font_style() == other.font_style() && self.text_decoration() == other.text_decoration()
-                self.font_style_sapin() == other.font_style_sapin() && self.text_decoration() == other.text_decoration()
+                self.font_style_sapin() == other.font_style_sapin() && self.text_decoration_sapin() == other.text_decoration_sapin()
             },
             (&TextRenderBoxClass(text_box_a), &TextRenderBoxClass(text_box_b)) => {
                 managed::ptr_eq(text_box_a.run, text_box_b.run)
@@ -1007,66 +1007,6 @@ impl RenderBox {
 
     pub fn vertical_align(&self) -> CSSVerticalAlign {
         self.nearest_ancestor_element().style().vertical_align()
-    }
-
-    /// Returns the text decoration of the computed style of the nearest `Element` node
-    pub fn text_decoration(&self) -> CSSTextDecoration {
-        /// Computes the propagated value of text-decoration, as specified in CSS 2.1 § 16.3.1
-        /// TODO: make sure this works with anonymous box generation.
-        fn get_propagated_text_decoration(element: AbstractNode<LayoutView>) -> CSSTextDecoration {
-            //Skip over non-element nodes in the DOM
-            if(!element.is_element()){
-                return match element.parent_node() {
-                    None => CSSTextDecorationNone,
-                    Some(parent) => get_propagated_text_decoration(parent),
-                };
-            }
-
-            //FIXME: is the root param on display() important?
-            let display_in_flow = match element.style().display(false) {
-                CSSDisplayInlineTable | CSSDisplayInlineBlock => false,
-                _ => true,
-            };
-
-            let position = element.style().position();
-            let float = element.style().float();
-
-            let in_flow = (position == CSSPositionStatic) && (float == CSSFloatNone) &&
-                display_in_flow;
-
-            let text_decoration = element.style().text_decoration();
-            if(text_decoration == CSSTextDecorationNone && in_flow){
-                match element.parent_node() {
-                    None => CSSTextDecorationNone,
-                    Some(parent) => get_propagated_text_decoration(parent),
-                }
-            }
-            else {
-                text_decoration
-            }
-        }
-
-        let text_decoration_cached = match *self {
-            UnscannedTextRenderBoxClass(ref box) => {
-                match box.text_decoration {
-                    Some(ref decoration) => Some(decoration.clone()),
-                    None => None
-                }
-            }
-            _ => None
-        };
-        if text_decoration_cached.is_some() {
-            return text_decoration_cached.unwrap();
-        } else {
-            let text_decoration = get_propagated_text_decoration(self.nearest_ancestor_element());
-            match *self {
-                UnscannedTextRenderBoxClass(ref box) => {
-                    box.text_decoration = Some(text_decoration.clone());
-                }
-                _ => ()
-            }
-            return text_decoration;
-        }
     }
 
     // ymin
