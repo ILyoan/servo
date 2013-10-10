@@ -149,7 +149,10 @@ ol, p, ul, center,
     head            {display: block; unicode-bidi: embed}
     body            {display: block; unicode-bidi: embed}
     h1              {display: block; unicode-bidi: embed}
+    h2              {display: block; unicode-bidi: embed}
     p               {display: block; unicode-bidi: embed}
+    div             {display: block; unicode-bidi: embed}
+    span            {display: inline; unicode-bidi: embed}
     li              { display: list-item }
     head            { display: none }
     table           { display: table }
