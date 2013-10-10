@@ -1262,10 +1262,10 @@ fn color_exchange1(input: Color) -> newcss::color::Color {
 	match input {
                 CurrentColor => {}
                 RGBA(rgba) => {
-			output.red = rgba.red as u8;
-			output.green = rgba.green as u8;
-			output.blue = rgba.blue as u8;
-			output.alpha = rgba.alpha as float;
+			output.red = (rgba.red * 255.0) as u8;
+			output.green = (rgba.green * 255.0) as u8;
+			output.blue = (rgba.blue * 255.0) as u8;
+			output.alpha = (rgba.alpha * 255.0) as float;
 		}
         };
 	output
