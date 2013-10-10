@@ -445,7 +445,6 @@ impl Font {
                 advance = advance + glyph.advance();
             }
         }
-        printfln!("===> advance: %?", advance);
         RunMetrics::new(advance, self.metrics.ascent, self.metrics.descent)
     }
 
