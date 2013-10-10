@@ -944,6 +944,8 @@ impl RenderBox {
             let font_size = match my_style_sapin.Font.font_size {
                 computed::Length(length) => length as float
             };
+
+            let font_size = font_size/60.0;
             printfln!("(font style) font size: `%fpx`", font_size);
 
             let (italic, oblique) = match my_style_sapin.Font.font_style {

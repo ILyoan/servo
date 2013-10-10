@@ -457,7 +457,7 @@ pub mod longhands {
         pub type SpecifiedValue = specified::Length;  // Percentages are the same as em.
         pub type ComputedValue = computed::Length;
         #[inline] pub fn get_initial_value() -> ComputedValue {
-            computed::Length(16)  // medium
+            computed::Length(16 * 60)  // medium
         }
         /// <length> | <percentage>
         /// TODO: support <absolute-size> and <relative-size>
