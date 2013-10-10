@@ -928,7 +928,7 @@ impl RenderBox {
         fn get_font_style_sapin(element: AbstractNode<LayoutView>) -> FontStyle {
             let my_style_sapin = element.style_sapin();
 
-            printfln!("(font style) start: %?", element.type_id());
+            debug!("(font style) start: %?", element.type_id());
 
             // FIXME: Too much allocation here.
             let font_families = do my_style_sapin.Font.font_family.map |family| {
@@ -937,16 +937,16 @@ impl RenderBox {
                 }
             };
 
-            printfln!("~(font style) font families: `%s`", font_families.to_str());
+            debug!("~(font style) font families: `%s`", font_families.to_str());
             let font_families = font_families.connect(", ");
-            printfln!("(font style) font families: `%s`", font_families);
+            debug!("(font style) font families: `%s`", font_families);
 
             let font_size = match my_style_sapin.Font.font_size {
                 computed::Length(length) => length as float
             };
 
             let font_size = font_size/60.0;
-            printfln!("(font style) font size: `%fpx`", font_size);
+            debug!("(font style) font size: `%fpx`", font_size);
 
             let (italic, oblique) = match my_style_sapin.Font.font_style {
                 font_style::normal => (false, false),
