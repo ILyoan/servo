@@ -10,8 +10,7 @@ use text::glyph::GlyphStore;
 use font::{Font, FontDescriptor, RunMetrics};
 use servo_util::range::Range;
 use extra::arc::Arc;
-use newcss::values::CSSTextDecoration;
-
+//use newcss::values::CSSTextDecoration;
 
 ////////////////////////////////////
 // FIXME
@@ -24,7 +23,6 @@ pub enum CSSTextDecoration {
     CSSTextDecorationBlink
 }
 /////////////////////////////////////
-
 
 /// A text run.
 pub struct TextRun {

@@ -29,8 +29,8 @@ use gfx::text::text_run::{CSSTextDecoration, CSSTextDecorationNone, CSSTextDecor
 use newcss::color::{/*Color,*/ rgb};
 use newcss;
 use newcss::complete::CompleteStyle;
-use newcss::units::{Em, Px};
-use newcss::units::{Cursive, Fantasy, Monospace, SansSerif, Serif};
+//use newcss::units::{Em, Px};
+//use newcss::units::{Cursive, Fantasy, Monospace, SansSerif, Serif};
 use newcss::values::{CSSBorderStyleDashed, CSSBorderStyleSolid};
 use newcss::values::{CSSClearNone, CSSClearLeft, CSSClearRight, CSSClearBoth};
 //use newcss::values::{CSSFontFamilyFamilyName, CSSFontFamilyGenericFamily};
@@ -653,7 +653,6 @@ impl RenderBox {
                                                   dirty: &Rect<Au>,
                                                   offset: &Point2D<Au>,
                                                   list: &Cell<DisplayList<E>>) {
-	println("build_display_list, start");
         let box_bounds = self.position();
         let absolute_box_bounds = box_bounds.translate(offset);
         debug!("RenderBox::build_display_list at rel=%?, abs=%?: %s",

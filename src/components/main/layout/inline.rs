@@ -17,12 +17,12 @@ use std::util;
 use geom::{Point2D, Rect, Size2D};
 use gfx::display_list::DisplayList;
 use gfx::geometry::Au;
-use newcss::units::{Em, Px};
+//use newcss::units::{Em, Px};
 //use newcss::values::{CSSTextAlignLeft, CSSTextAlignCenter, CSSTextAlignRight, CSSTextAlignJustify};
-use newcss::values::{CSSLineHeightNormal, CSSLineHeightNumber, CSSLineHeightLength, CSSLineHeightPercentage};
-use newcss::values::{CSSVerticalAlignBaseline, CSSVerticalAlignMiddle, CSSVerticalAlignSub, CSSVerticalAlignSuper,
-                     CSSVerticalAlignTextTop, CSSVerticalAlignTextBottom, CSSVerticalAlignTop, CSSVerticalAlignBottom,
-                     CSSVerticalAlignLength, CSSVerticalAlignPercentage};
+//use newcss::values::{CSSLineHeightNormal, CSSLineHeightNumber, CSSLineHeightLength, CSSLineHeightPercentage};
+//use newcss::values::{CSSVerticalAlignBaseline, CSSVerticalAlignMiddle, CSSVerticalAlignSub, CSSVerticalAlignSuper,
+//                     CSSVerticalAlignTextTop, CSSVerticalAlignTextBottom, CSSVerticalAlignTop, CSSVerticalAlignBottom,
+//                     CSSVerticalAlignLength, CSSVerticalAlignPercentage};
 use servo_util::range::Range;
 use servo_util::tree::TreeNodeRef;
 use extra::container::Deque;
