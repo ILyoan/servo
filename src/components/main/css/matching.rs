@@ -13,6 +13,8 @@ use newcss::complete::CompleteSelectResults;
 use newcss::select::{SelectCtx, SelectResults};
 use servo_util::tree::TreeNodeRef;
 
+use std::io;
+
 pub trait MatchMethods {
     fn restyle_subtree(&self, select_ctx: &mut SelectCtx<AbstractNode<LayoutView>, NodeSelectHandler>);
 }
@@ -32,7 +34,8 @@ impl MatchMethods for AbstractNode<LayoutView> {
                 let inline_style = match elem.style_attribute {
                     None => None,
                     Some(ref sheet) => Some(sheet),
-                };                
+                };
+                //io::println(fmt!("AbstractNode: %?", self));
                 let incomplete_results = select_ctx.select_style(self, inline_style);
                 // Combine this node's results with its parent's to resolve all inherited values
                 let complete_results = compose_results(*self, incomplete_results);
