@@ -76,7 +76,10 @@ pub fn parse_selector_list(input: ~[ComponentValue], namespaces: &NamespaceMap)
                            -> Option<~[@Selector]> {
     let iter = &mut input.move_iter().peekable();
     let first = match parse_selector(iter, namespaces) {
-        None => return None,
+        None => { 
+		//println("In parse_selector_list(), first None");
+		return None; 
+	}
         Some(result) => result
     };
     let mut results = ~[first];
@@ -86,11 +89,17 @@ pub fn parse_selector_list(input: ~[ComponentValue], namespaces: &NamespaceMap)
         match iter.peek() {
             None => break,  // EOF
             Some(&Comma) => { iter.next(); }
-            _ => return None,
+            _ => {
+		//println("In parse_selector_list(), second None");
+	    	return None;
+	    }
         }
         match parse_selector(iter, namespaces) {
             Some(selector) => results.push(selector),
-            None => return None,
+            None => {
+		//println("In parse_selector_list(), third None");
+	    	return None;
+	    }
         }
     }
     Some(results)
@@ -101,7 +110,13 @@ pub fn parse_selector_list(input: ~[ComponentValue], namespaces: &NamespaceMap)
 fn parse_selector(iter: &mut Iter, namespaces: &NamespaceMap)
                   -> Option<@Selector> {
     let (first, pseudo_element) = match parse_simple_selectors(iter, namespaces) {
-        None => return None,
+        None => {
+		//{
+		//	println(fmt!("In parse_selector(), iter.peek() = %?",iter.peek()));
+		//}
+		//println("In parse_selector(), first None");
+		return None;
+	}
         Some(result) => result
     };
     let mut compound = CompoundSelector{ simple_selectors: first, next: None };
@@ -117,11 +132,20 @@ fn parse_selector(iter: &mut Iter, namespaces: &NamespaceMap)
 	    Some(&Comma) => { break },
             Some(_) => {
                 if any_whitespace { Descendant }
-                else { return None }
+                else { 
+			//{
+			//	println(fmt!("In parse_selector(), iter.peek() = %?",iter.peek()));
+			//}
+			//println("In parse_selector(), second None");
+			return None; 
+		}
             }
         };
         match parse_simple_selectors(iter, namespaces) {
-            None => return None,
+            None => {
+		//println("In parse_selector(), third None");
+		return None;
+	    }
             Some((simple_selectors, pseudo)) => {
                 compound = CompoundSelector {
                     simple_selectors: simple_selectors,
@@ -194,7 +218,10 @@ fn parse_simple_selectors(iter: &mut Iter, namespaces: &NamespaceMap)
                            -> Option<(~[SimpleSelector], Option<PseudoElement>)> {
     let mut empty = true;
     let mut simple_selectors = match parse_type_selector(iter, namespaces) {
-        None => return None,  // invalid selector
+        None => { 
+		println("In parse_simple_selectors(), first None");
+		return None;
+	}  // invalid selector
         Some(None) => ~[],
         Some(Some(s)) => { empty = false; s }
     };
@@ -202,7 +229,10 @@ fn parse_simple_selectors(iter: &mut Iter, namespaces: &NamespaceMap)
     let mut pseudo_element = None;
     loop {
         match parse_one_simple_selector(iter, namespaces, /* inside_negation = */ false) {
-            None => return None, // invalid selector
+            None => {
+		println("In parse_simple_selectors(), second None");
+		return None;
+	    } // invalid selector
             Some(None) => break,
             Some(Some(Left(s))) => simple_selectors.push(s),
             Some(Some(Right(p))) => { pseudo_element = Some(p); break },
@@ -251,6 +281,7 @@ fn parse_one_simple_selector(iter: &mut Iter, namespaces: &NamespaceMap, inside_
             _ => fail!("Implementation error, this should not happen."),
         },
         Some(&Delim('.')) => {
+	    println("In parse_one_simple_selector(), direct to ClassSelector");
             iter.next();
             match iter.next() {
                 Some(Ident(class)) => Some(Some(Left(ClassSelector(class)))),
@@ -327,6 +358,9 @@ fn parse_qualified_name(iter: &mut Iter, allow_universal: bool, namespaces: &Nam
         }
     }
 
+    //{
+    //	println(fmt!("In parse_qualified_name(), iter.peek() = %?", iter.peek()));	
+    //}
     match iter.peek() {
         Some(&Ident(_)) => {
             let value = get_next_ident(iter);
@@ -352,6 +386,7 @@ fn parse_qualified_name(iter: &mut Iter, allow_universal: bool, namespaces: &Nam
             }
         },
         Some(&Delim('|')) => explicit_namespace(iter, allow_universal, Some(~"")),
+	Some(&Delim('.')) => default_namespace(namespaces, None),
         _ => return None,
     }
 }
