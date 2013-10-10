@@ -46,7 +46,7 @@ use extra::url::Url;
 
 use script::style::properties::common_types::computed;
 use script::style::properties::ComputedValues;
-use script::style::properties::longhands::{clear, font_family, font_style};
+use script::style::properties::longhands::{clear, font_family, font_style, vertical_align};
 use script::style::properties::longhands::{line_height, text_align, text_decoration};
 use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
 use script::style::properties::longhands::{display, position, float};
@@ -1034,12 +1034,13 @@ impl RenderBox {
         self.nearest_ancestor_element().style_sapin().Box.line_height
     }
 
-    // FIXME: ryanc: vertical-align has not yet implemented
     pub fn vertical_align(&self) -> CSSVerticalAlign {
         self.nearest_ancestor_element().style().vertical_align()
     }
 
-
+    pub fn vertical_align_sapin(&self) -> vertical_align::ComputedValue {
+        self.nearest_ancestor_element().style_sapin().Box.vertical_align
+    }
 
     /// Returns the text decoration of the computed style of the nearest `Element` node
     pub fn text_decoration(&self) -> CSSTextDecoration {

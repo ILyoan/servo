@@ -29,7 +29,7 @@ use extra::container::Deque;
 use extra::ringbuf::RingBuf;
 
 use script::style::properties::common_types::{computed};
-use script::style::properties::longhands::{text_align, line_height};
+use script::style::properties::longhands::{text_align, line_height, vertical_align};
 
 /*
 Lineboxes are represented as offsets into the child list, rather than
@@ -835,8 +835,8 @@ impl InlineFlowData {
                 // That is, if the box has top or bottom value, no_update_flag becomes true.
                 let mut no_update_flag = false;
 
-                /*
                 // Calculate a relative offset from baseline.
+                /*
                 let offset = match cur_box.vertical_align() {
                     CSSVerticalAlignBaseline => {
                         -ascent
@@ -910,10 +910,73 @@ impl InlineFlowData {
                 };
                 */
 
-                // Calculate a relative offset from baseline
-                // FIXME: ryanc: vertical-align has not yet implemented
-                let offset = Au::from_px(16);
+                let offset = match cur_box.vertical_align_sapin() {
+                    vertical_align::Baseline => {
+                        -ascent
+                    },
+                    vertical_align::Middle => {
+                        // TODO: x-height value should be used from font info.
+                        let xheight = Au(0);
+                        -(xheight + scanner.box_height(cur_box)).scale_by(0.5)
+                    },
+                    vertical_align::Sub => {
+                        // TODO: The proper position for subscripts should be used.
+                        // Lower the baseline to the proper position for subscripts
+                        let sub_offset = Au(0);
+                        (sub_offset - ascent)
+                    },
+                    vertical_align::Super => {
+                        // TODO: The proper position for superscripts should be used.
+                        // Raise the baseline to the proper position for superscripts
+                        let super_offset = Au(0);
+                        (-super_offset - ascent)
+                    },
+                    vertical_align::TextTop => {
+                        let box_height = top_from_base + bottom_from_base;
+                        let prev_bottom_from_base = bottom_from_base;
+                        top_from_base = parent_text_top;
+                        bottom_from_base = box_height - top_from_base;
+                        (bottom_from_base - prev_bottom_from_base - ascent)
+                    },
+                    vertical_align::TextBottom => {
+                        let box_height = top_from_base + bottom_from_base;
+                        let prev_bottom_from_base = bottom_from_base;
+                        bottom_from_base = parent_text_bottom;
+                        top_from_base = box_height - bottom_from_base;
+                        (bottom_from_base - prev_bottom_from_base - ascent)
+                    },
+                    vertical_align::Top => {
+                        if biggest_top < (top_from_base + bottom_from_base) {
+                            biggest_top = top_from_base + bottom_from_base;
+                        }
+                        let offset_top = top_from_base - ascent;
+                        no_update_flag = true;
+                        offset_top
+                    },
+                    vertical_align::Bottom => {
+                        if biggest_bottom < (top_from_base + bottom_from_base) {
+                            biggest_bottom = top_from_base + bottom_from_base;
+                        }
+                        let offset_bottom = -(bottom_from_base + ascent);
+                        no_update_flag = true;
+                        offset_bottom
+                    },
+                    vertical_align::Length(length) => {
+                        let length_offset = match length {
+                            // Em(l) => Au::from_frac_px(cur_box.font_style().pt_size * l),
+                            // Px(l) => Au::from_frac_px(l),
 
+                            // FIXME: ryanc: Em and Px should not be used here
+                            // Assuming l is already in Au.
+                            //Px(l) => Au(l as i32), // FIXME: ryanc: verify
+                            //Em(l) => Au::from_frac_px(cur_box.font_style()_sapin.pt_size * l),
+
+                            // FIXME(sonwow) : is it right?
+                            computed::Length(length) => Au(length as i32)
+                        };
+                        -(length_offset + ascent)
+                    },
+                };
 
                 // If the current box has 'top' or 'bottom' value, no_update_flag is true.
                 // Otherwise, topmost and bottomost are updated.
@@ -946,15 +1009,14 @@ impl InlineFlowData {
             // Now, the baseline offset from the top of linebox is set as topmost.
             let baseline_offset = topmost;
 
-            /*
             // All boxes' y position is updated following the new baseline offset.
             for box_i in line.range.eachi() {
                 let cur_box = self.boxes[box_i];
-                let adjust_offset = match cur_box.vertical_align() {
-                    CSSVerticalAlignTop => {
+                let adjust_offset = match cur_box.vertical_align_sapin() {
+                    vertical_align::Top => {
                         Au(0)
                     },
-                    CSSVerticalAlignBottom => {
+                    vertical_align::Bottom => {
                         baseline_offset + bottommost
                     },
                     _ => {
@@ -966,7 +1028,6 @@ impl InlineFlowData {
                     base.position.origin.y = base.position.origin.y + adjust_offset;
                 }
             }
-            */
 
             // FIXME: ryanc: vertical align has not yet implemented yet.
 
