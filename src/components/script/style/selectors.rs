@@ -85,7 +85,7 @@ pub fn parse_selector_list(input: ~[ComponentValue], namespaces: &NamespaceMap)
         skip_whitespace(iter);
         match iter.peek() {
             None => break,  // EOF
-            Some(&Comma) => (),
+            Some(&Comma) => { iter.next(); }
             _ => return None,
         }
         match parse_selector(iter, namespaces) {
@@ -114,6 +114,7 @@ fn parse_selector(iter: &mut Iter, namespaces: &NamespaceMap)
             Some(&Delim('>')) => { iter.next(); Child },
             Some(&Delim('+')) => { iter.next(); NextSibling },
             Some(&Delim('~')) => { iter.next(); LaterSibling },
+	    Some(&Comma) => { break },
             Some(_) => {
                 if any_whitespace { Descendant }
                 else { return None }
