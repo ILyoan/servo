@@ -279,7 +279,7 @@ impl RenderBox {
     pub fn can_merge_with_box(&self, other: RenderBox) -> bool {
         match (self, &other) {
             (&UnscannedTextRenderBoxClass(*), &UnscannedTextRenderBoxClass(*)) => {
-//                self.font_style() == other.font_style() && self.text_decoration() == other.text_decoration()
+		//self.font_style() == other.font_style() && self.text_decoration() == other.text_decoration()
                 self.font_style_sapin() == other.font_style_sapin() && self.text_decoration() == other.text_decoration()
             },
             (&TextRenderBoxClass(text_box_a), &TextRenderBoxClass(text_box_b)) => {
@@ -851,6 +851,75 @@ impl RenderBox {
             clear::left => Some(ClearLeft),
             clear::right => Some(ClearRight),
             clear::both => Some(ClearBoth)
+        }
+    }
+
+
+    /// Converts this node's computed style to a font style used for rendering.
+    pub fn font_style(&self) -> FontStyle {
+        fn get_font_style(element: AbstractNode<LayoutView>) -> FontStyle {
+            let my_style = element.style();
+
+            debug!("(font style) start: %?", element.type_id());
+
+            // FIXME: Too much allocation here.
+            let font_families = do my_style.font_family().map |family| {
+                match *family {
+                    CSSFontFamilyFamilyName(ref family_str) => (*family_str).clone(),
+                    CSSFontFamilyGenericFamily(Serif)       => ~"serif",
+                    CSSFontFamilyGenericFamily(SansSerif)   => ~"sans-serif",
+                    CSSFontFamilyGenericFamily(Cursive)     => ~"cursive",
+                    CSSFontFamilyGenericFamily(Fantasy)     => ~"fantasy",
+                    CSSFontFamilyGenericFamily(Monospace)   => ~"monospace",
+                }
+            };
+            let font_families = font_families.connect(", ");
+            debug!("(font style) font families: `%s`", font_families);
+
+            let font_size = match my_style.font_size() {
+                CSSFontSizeLength(Px(length)) => length,
+                // todo: this is based on a hard coded font size, should be the parent element's font size
+                CSSFontSizeLength(Em(length)) => length * 16f,
+                _ => 16f // px units
+            };
+            debug!("(font style) font size: `%fpx`", font_size);
+
+            let (italic, oblique) = match my_style.font_style() {
+                CSSFontStyleNormal => (false, false),
+                CSSFontStyleItalic => (true, false),
+                CSSFontStyleOblique => (false, true),
+            };
+
+            FontStyle {
+                pt_size: font_size,
+                weight: FontWeight300,
+                italic: italic,
+                oblique: oblique,
+                families: font_families,
+            }
+        }
+
+        let font_style_cached = match *self {
+            UnscannedTextRenderBoxClass(ref box) => {
+                match box.font_style {
+                    Some(ref style) => Some(style.clone()),
+                    None => None
+                }
+            }
+            _ => None
+        };
+
+        if font_style_cached.is_some() {
+            return font_style_cached.unwrap();
+        } else {
+            let font_style = get_font_style(self.nearest_ancestor_element());
+            match *self {
+                UnscannedTextRenderBoxClass(ref box) => {
+                    box.font_style = Some(font_style.clone());
+                }
+                _ => ()
+            }
+            return font_style;
         }
     }
 

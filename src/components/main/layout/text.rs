@@ -79,14 +79,14 @@ impl TextRunScanner {
         for box_i in range(0, flow.imm_inline().boxes.len()) {
             debug!("TextRunScanner: considering box: %?", flow.imm_inline().boxes[box_i].debug_str());
             if box_i > 0 && !can_coalesce_text_nodes(flow.imm_inline().boxes, box_i-1, box_i) {
-                // last_whitespace = self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
+                //last_whitespace = self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
                 last_whitespace = self.flush_clump_to_list_sapin(ctx, flow, last_whitespace, &mut out_boxes);
             }
             self.clump.extend_by(1);
         }
         // handle remaining clumps
         if self.clump.length() > 0 {
-            // self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
+            //self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
             self.flush_clump_to_list_sapin(ctx, flow, last_whitespace, &mut out_boxes);
         }
 
@@ -121,7 +121,7 @@ impl TextRunScanner {
     /// N.B. `in_boxes` is passed by reference, since the old code used a `DVec`. The caller is
     /// responsible for swapping out the list. It is not clear to me (pcwalton) that this is still
     /// necessary.
-    /*
+    
     pub fn flush_clump_to_list(&mut self,
                                ctx: &LayoutContext,
                                flow: &mut FlowContext,
@@ -274,7 +274,7 @@ impl TextRunScanner {
 
         new_whitespace
     } // End of `flush_clump_to_list`.
-*/
+
     pub fn flush_clump_to_list_sapin(&mut self,
                                ctx: &LayoutContext,
                                flow: &mut FlowContext,
