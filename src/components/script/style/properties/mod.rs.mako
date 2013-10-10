@@ -535,7 +535,7 @@ pub mod longhands {
             do specified::LengthOrPercentage::parse_non_negative(input).map_move |value| {
                 match value {
                     specified::LP_Length(value) => value,
-                    specified::LP_Percentage(value) => specified::Em(value),
+                    specified::LP_Percentage(value) => specified::Em(value * 0.01),
                 }
             }
         }
