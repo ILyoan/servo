@@ -141,7 +141,7 @@ fn css_link_listener(to_parent: SharedChan<HtmlDiscoveryMessage>,
     loop {
         match from_parent.recv() {
             CSSTaskNewFile(provenance) => {
-                printfln!("CSSTaskNewFile: %?", provenance);
+                error!("CSSTaskNewFile: %?", provenance);
                 result_vec.push(spawn_css_parser(provenance, resource_task.clone()));
             }
             CSSTaskExit => {

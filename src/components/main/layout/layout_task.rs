@@ -189,20 +189,20 @@ impl LayoutTask {
     }
 
     fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
-        printfln!("handle_add_stylesheet");
+        error!("handle_add_stylesheet");
         self.css_select_ctx.append_sheet(sheet, OriginAuthor);
     }
 
     fn handle_add_stylesheet2(&mut self, sheet: CSSData) {
-        printfln!("handle_add_stylesheet2");
+        error!("handle_add_stylesheet2");
         let css_data = sheet.data.get_ref().clone();
         if self.css_data.len() == 0 {
-            printfln!("1css_data: %?", css_data);
-            printfln!("1self.css_data: %?",self.css_data);
+            error!("1css_data: %?", css_data);
+            error!("1self.css_data: %?",self.css_data);
             self.css_data = css_data;
         } else if (self.css_data != css_data) && (css_data.len() > 0) {
-            printfln!("2css_data: %?", css_data);
-            printfln!("2self.css_data: %?",self.css_data);
+            error!("2css_data: %?", css_data);
+            error!("2self.css_data: %?",self.css_data);
             self.css_data = css_data;
         }
         self.css_data = sheet.data.get_ref().clone();
@@ -248,7 +248,7 @@ impl LayoutTask {
         match data.damage.level {
             ReflowDocumentDamage => {}
             MatchSelectorsDocumentDamage => {
-                println("MatchSelectorsDocumentDamage");
+                error!("MatchSelectorsDocumentDamage");
                 do profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone()) {
                     let s = precise_time_ns();
                     node.restyle_subtree(self.css_select_ctx);
@@ -258,11 +258,11 @@ impl LayoutTask {
                 }
 
                 let mut style = Stylist::new();
-                printfln!("css data: %?", self.css_data);
+                error!("css data: %?", self.css_data);
                 style.add_stylesheet(html4_default_style_str_tmp(), UserAgentOrigin);
                 style.add_stylesheet(self.css_data, AuthorOrigin);
 
-                //printfln!("style: %?", style);
+                //error!("style: %?", style);
                 let s = precise_time_ns();
                 style.get_computed_style(*node, None, None);
                 let e = precise_time_ns();

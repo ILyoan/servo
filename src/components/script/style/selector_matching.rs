@@ -115,7 +115,7 @@ impl Stylist {
         let computed_values = cascade(applicable_declarations, parent_style);
 /*
         do element.with_imm_element |elem| {
-            printfln!("%?: %?", elem.tag_name, computed_values);
+            error!("%?: %?", elem.tag_name, computed_values);
         }
 */
         for child in element.children() {
