@@ -205,12 +205,14 @@ impl BlockFlowData {
                 let available_width = remaining_width - model.noncontent_width();
 
                 // Top and bottom margins for blocks are 0 if auto.
-                // let margin_top = MaybeAuto::from_margin(style.margin_top(),
-                                                        // remaining_width,
-                                                        // style.font_size()).specified_or_zero();
-                // let margin_bottom = MaybeAuto::from_margin(style.margin_bottom(),
-                                                           // remaining_width,
-                                                           // style.font_size()).specified_or_zero();
+                /*
+                let margin_top = MaybeAuto::from_margin(style.margin_top(),
+                                                        remaining_width,
+                                                        style.font_size()).specified_or_zero();
+                let margin_bottom = MaybeAuto::from_margin(style.margin_bottom(),
+                                                           remaining_width,
+                                                           style.font_size()).specified_or_zero();
+                */
 
                 let margin_top = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_top,
                                                               remaining_width,
@@ -218,11 +220,12 @@ impl BlockFlowData {
                 let margin_bottom = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_bottom,
                                                                  remaining_width,
                                                                  style_sapin.Font.font_size).specified_or_zero();
-
-                // let (width, margin_left, margin_right) =
-                    // (MaybeAuto::from_width(style.width(), remaining_width, style.font_size()),
-                     // MaybeAuto::from_margin(style.margin_left(), remaining_width, style.font_size()),
-                     // MaybeAuto::from_margin(style.margin_right(), remaining_width, style.font_size()));
+                /*
+                let (width, margin_left, margin_right) =
+                    (MaybeAuto::from_width(style.width(), remaining_width, style.font_size()),
+                     MaybeAuto::from_margin(style.margin_left(), remaining_width, style.font_size()),
+                     MaybeAuto::from_margin(style.margin_right(), remaining_width, style.font_size()));
+                */
 
                 let (width, margin_left, margin_right) =
                     (MaybeAuto::from_width_sapin(style_sapin.Box.width, remaining_width, style_sapin.Font.font_size),

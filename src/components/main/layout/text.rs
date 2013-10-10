@@ -79,15 +79,13 @@ impl TextRunScanner {
         for box_i in range(0, flow.imm_inline().boxes.len()) {
             debug!("TextRunScanner: considering box: %?", flow.imm_inline().boxes[box_i].debug_str());
             if box_i > 0 && !can_coalesce_text_nodes(flow.imm_inline().boxes, box_i-1, box_i) {
-                // last_whitespace = self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
-                last_whitespace = self.flush_clump_to_list_sapin(ctx, flow, last_whitespace, &mut out_boxes);
+                last_whitespace = self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
             }
             self.clump.extend_by(1);
         }
         // handle remaining clumps
         if self.clump.length() > 0 {
-            // self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
-            self.flush_clump_to_list_sapin(ctx, flow, last_whitespace, &mut out_boxes);
+            self.flush_clump_to_list(ctx, flow, last_whitespace, &mut out_boxes);
         }
 
         debug!("TextRunScanner: swapping out boxes.");
@@ -154,8 +152,11 @@ impl TextRunScanner {
                 println("true, true");
                 let old_box = in_boxes[self.clump.begin()];
                 let text = old_box.raw_text();
-                let font_style = old_box.font_style();
-                let decoration = old_box.text_decoration();
+                // let font_style = old_box.font_style();
+                // let decoration = old_box.text_decoration();
+                let font_style = old_box.font_style_sapin();
+                let decoration = old_box.text_decoration_sapin();
+
 
                 // TODO(#115): Use the actual CSS `white-space` property of the relevant style.
                 let compression = CompressWhitespaceNewline;
@@ -217,9 +218,12 @@ impl TextRunScanner {
                 // TODO(#177): Text run creation must account for the renderability of text by
                 // font group fonts. This is probably achieved by creating the font group above
                 // and then letting `FontGroup` decide which `Font` to stick into the text run.
-                let font_style = in_boxes[self.clump.begin()].font_style();
+                // let font_style = in_boxes[self.clump.begin()].font_style();
+                let font_style = in_boxes[self.clump.begin()].font_style_sapin();
                 let fontgroup = ctx.font_ctx.get_resolved_font_for_style(&font_style);
-                let decoration = in_boxes[self.clump.begin()].text_decoration();
+
+                // let decoration = in_boxes[self.clump.begin()].text_decoration();
+                let decoration = in_boxes[self.clump.begin()].text_decoration_sapin();
 
                 // TextRuns contain a cycle which is usually resolved by the teardown
                 // sequence. If no clump takes ownership, however, it will leak.
@@ -274,6 +278,7 @@ impl TextRunScanner {
         new_whitespace
     } // End of `flush_clump_to_list`.
 
+/*
     pub fn flush_clump_to_list_sapin(&mut self,
                                ctx: &LayoutContext,
                                flow: &mut FlowContext,
@@ -281,9 +286,6 @@ impl TextRunScanner {
                                out_boxes: &mut ~[RenderBox]) -> bool {
         let inline = flow.inline();
         let in_boxes = &inline.boxes;
-
-        printfln!("# flush_clump_to_list_sapin");
-
 
         assert!(self.clump.length() > 0);
 
@@ -425,4 +427,5 @@ impl TextRunScanner {
 
         new_whitespace
     } // End of `flush_clump_to_list_sapin`.
+*/
 }

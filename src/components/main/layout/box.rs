@@ -51,6 +51,7 @@ use script::style::properties::longhands::{line_height, text_align, text_decorat
 use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
 use script::style::properties::longhands::{display, position, float};
 use cssparser::*;
+use gfx::geometry;
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -568,11 +569,13 @@ impl RenderBox {
         (Au(0), Au(0))
     }
 
+    /*
     pub fn compute_padding(&self, cb_width: Au) {
         do self.with_mut_base |base| {
             base.model.compute_padding(base.node.style(), cb_width);
         }
     }
+    */
 
     pub fn compute_padding_sapin(&self, cb_width: Au) {
         do self.with_mut_base |base| {
@@ -970,7 +973,7 @@ impl RenderBox {
             debug!("(font style) font families: `%s`", font_families);
 
             let font_size = match my_style_sapin.Font.font_size {
-                computed::Length(length) => length/60
+                computed::Length(length) => geometry::px_to_pt((length/60) as float) // converting au to pt
             };
             debug!("(font style) font size: `%?px`", font_size);
 
@@ -1031,9 +1034,12 @@ impl RenderBox {
         self.nearest_ancestor_element().style_sapin().Box.line_height
     }
 
+    // FIXME: ryanc: vertical-align has not yet implemented
     pub fn vertical_align(&self) -> CSSVerticalAlign {
         self.nearest_ancestor_element().style().vertical_align()
     }
+
+
 
     /// Returns the text decoration of the computed style of the nearest `Element` node
     pub fn text_decoration(&self) -> CSSTextDecoration {
@@ -1265,6 +1271,6 @@ fn color_exchange1(input: Color) -> newcss::color::Color {
 }
 
 fn color_exchange2(input: RGBA) -> newcss::color::Color {
-        let output = newcss::color::Color { red: input.red as u8, green: input.green as u8, blue: input.blue as u8, alpha: input.alpha as float };
-	output
+    let output = newcss::color::Color { red: (input.red * 255.0) as u8, green: (input.green * 255.0) as u8, blue: (input.blue * 255.0) as u8, alpha: input.alpha as float };
+    output
 }

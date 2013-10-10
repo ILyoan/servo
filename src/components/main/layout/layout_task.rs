@@ -243,7 +243,7 @@ impl LayoutTask {
                     node.restyle_subtree(self.css_select_ctx);
                     let e = precise_time_ns();
                     let ms = ((e - s) as float / 1000000f);
-                    printfln!("1. netsurfcss css match selector : %? ms", ms);
+                    printfln!("1. netsurfcss css selector matching : %? ms", ms);
                 }
 
                 let mut style = Stylist::new();
@@ -256,7 +256,7 @@ impl LayoutTask {
                 style.get_computed_style(*node, None, None);
                 let e = precise_time_ns();
                 let ms = ((e - s) as float / 1000000f);
-                printfln!("2. simon`s css match selector    : %? ms", ms);
+                printfln!("2. simon`s css selector matching    : %? ms", ms);
             }
         }
 

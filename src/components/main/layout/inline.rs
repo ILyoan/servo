@@ -549,10 +549,6 @@ impl InlineFlowData {
                 debug!("FlowContext[%d]: measuring %s", self.common.id, box.debug_str());
                 min_width = Au::max(min_width, box.get_min_width(ctx));
                 pref_width = Au::max(pref_width, box.get_pref_width(ctx));
-
-
-                printfln!("# min_width: %?; pref_width: %?", min_width, pref_width);
-
             }
 
             this.common.min_width = min_width;
@@ -656,14 +652,13 @@ impl InlineFlowData {
             }
             */
 
-            // ymin
-            let linebox_align_sapin;
+            let linebox_align;
             if line.range.begin() < self.boxes.len() {
                 let first_box = self.boxes[line.range.begin()];
-                linebox_align_sapin = first_box.text_align_sapin();
+                linebox_align = first_box.text_align_sapin();
             } else {
                 // Nothing to lay out, so assume left alignment.
-                linebox_align_sapin = text_align::left;
+                linebox_align = text_align::left;
             }
 
             /*
@@ -701,9 +696,8 @@ impl InlineFlowData {
             };
             */
 
-            // ymin
             let mut offset_x = line.bounds.origin.x;
-            match linebox_align_sapin {
+            match linebox_align {
                 text_align::left | text_align::justify => {
                     for i in line.range.eachi() {
                         do self.boxes[i].with_mut_base |base| {
@@ -822,9 +816,6 @@ impl InlineFlowData {
                     // Get parent node
                     let parent = base.node.parent_node().map_default(base.node, |parent| *parent);
                     // TODO: When the calculation of font-size style is supported, it should be updated.
-
-
-                    // ryanc: replacing this line
                     /*
                     let font_size = match parent.style().font_size() {
                         CSSFontSizeLength(Px(length)) => length,
@@ -832,8 +823,8 @@ impl InlineFlowData {
                         CSSFontSizeLength(Em(length)) => length * 16f,
                         _ => 16f // px units
                     };
+                    parent_text_top = Au::from_frac_px(font_size);
                     */
-                    // adding sapin's style
                     let font_size = match parent.style_sapin().Font.font_size {
                         computed::Length(length) => length, // in Au
                     };
@@ -843,6 +834,8 @@ impl InlineFlowData {
                 // This flag decides whether topmost and bottommost are updated or not.
                 // That is, if the box has top or bottom value, no_update_flag becomes true.
                 let mut no_update_flag = false;
+
+                /*
                 // Calculate a relative offset from baseline.
                 let offset = match cur_box.vertical_align() {
                     CSSVerticalAlignBaseline => {
@@ -915,6 +908,12 @@ impl InlineFlowData {
                         -(percent_offset + ascent)
                     }
                 };
+                */
+
+                // Calculate a relative offset from baseline
+                // FIXME: ryanc: vertical-align has not yet implemented
+                let offset = Au::from_px(16);
+
 
                 // If the current box has 'top' or 'bottom' value, no_update_flag is true.
                 // Otherwise, topmost and bottomost are updated.
@@ -947,6 +946,7 @@ impl InlineFlowData {
             // Now, the baseline offset from the top of linebox is set as topmost.
             let baseline_offset = topmost;
 
+            /*
             // All boxes' y position is updated following the new baseline offset.
             for box_i in line.range.eachi() {
                 let cur_box = self.boxes[box_i];
@@ -966,6 +966,9 @@ impl InlineFlowData {
                     base.position.origin.y = base.position.origin.y + adjust_offset;
                 }
             }
+            */
+
+            // FIXME: ryanc: vertical align has not yet implemented yet.
 
             // This is used to set the top y position of the next linebox in the next loop.
             line_height_offset = line_height_offset + topmost + bottommost - line.bounds.size.height;

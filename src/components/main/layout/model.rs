@@ -17,7 +17,7 @@ use newcss::values::{CSSMargin, CSSMarginLength, CSSMarginPercentage, CSSMarginA
 use newcss::values::{CSSPadding, CSSPaddingLength, CSSPaddingPercentage};
 
 use script::style::properties::{ComputedValues};
-use script::style::properties::common_types::{computed};
+use script::style::properties::common_types::{computed, specified};
 
 /// Encapsulates the borders, padding, and margins, which we collectively call the "box model".
 pub struct BoxModel {
@@ -30,15 +30,13 @@ pub struct BoxModel {
 
 fn from_length(length: Length, font_size: CSSFontSize) -> Au {
     match length {
-        // Px(v) => Au::from_frac_px(v),
-        // Em(em) => {
-            // match font_size {
-                // CSSFontSizeLength(Px(v)) => Au::from_frac_px(em * v),
-                // _ => fail!("expected non-relative font size")
-            // }
-        // }
-        Px(v) => Au(v as i32), // ryanc: Px and Em contains Au. Px and Em should not be used.
-        Em(v) => Au(v as i32),
+        Px(v) => Au::from_frac_px(v),
+        Em(em) => {
+            match font_size {
+                CSSFontSizeLength(Px(v)) => Au::from_frac_px(em * v),
+                _ => fail!("expected non-relative font size")
+            }
+        }
     }
 }
 
@@ -57,11 +55,11 @@ impl MaybeAuto {
         }
     }
 
-    pub fn from_margin_sapin(margin: computed::LengthOrPercentageOrAuto, _containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
+    pub fn from_margin_sapin(margin: computed::LengthOrPercentageOrAuto, containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
         match margin {
+            computed::LPA_Auto => Auto,
+            computed::LPA_Percentage(p) => Specified(containing_width.scale_by((p/100.0) as float)),
             computed::LPA_Length(computed::Length(length)) => Specified(Au(length as i32)),
-            computed::LPA_Percentage(value) => Specified(Au(value as i32)),
-            computed::LPA_Auto => Auto
         }
     }
 
@@ -73,11 +71,11 @@ impl MaybeAuto {
         }
     }
 
-    pub fn from_width_sapin(width: computed::LengthOrPercentageOrAuto, _containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
+    pub fn from_width_sapin(width: computed::LengthOrPercentageOrAuto, containing_width: Au, _font_size: computed::Length) -> MaybeAuto {
         match width {
+            computed::LPA_Auto => Auto,
+            computed::LPA_Percentage(p) => Specified(containing_width.scale_by((p/100.0) as float)),
             computed::LPA_Length(computed::Length(length)) => Specified(Au(length as i32)),
-            computed::LPA_Percentage(value) => Specified(Au(value as i32)),
-            computed::LPA_Auto => Auto
         }
     }
 
@@ -89,11 +87,11 @@ impl MaybeAuto {
         }
     }
 
-    pub fn from_height_sapin(height: computed::LengthOrPercentageOrAuto, _cb_height: Au, _font_size: computed::Length) -> MaybeAuto {
+    pub fn from_height_sapin(height: computed::LengthOrPercentageOrAuto, cb_height: Au, _font_size: computed::Length) -> MaybeAuto {
         match height {
+            computed::LPA_Auto => Auto,
+            computed::LPA_Percentage(p) => Specified(cb_height.scale_by((p/100.0) as float)),
             computed::LPA_Length(computed::Length(length)) => Specified(Au(length as i32)),
-            computed::LPA_Percentage(value) => Specified(Au(value as i32)),
-            computed::LPA_Auto => Auto
         }
     }
 
@@ -126,6 +124,7 @@ impl Zero for BoxModel {
 
 impl BoxModel {
     /// Populates the box model parameters from the given computed style.
+    /*
     pub fn compute_borders(&mut self, style: CompleteStyle) {
         // Compute the borders.
         self.border.top = self.compute_border_width(style.border_top_width(), style.font_size());
@@ -133,6 +132,7 @@ impl BoxModel {
         self.border.bottom = self.compute_border_width(style.border_bottom_width(), style.font_size());
         self.border.left = self.compute_border_width(style.border_left_width(), style.font_size());
     }
+    */
 
     pub fn compute_borders_sapin(&mut self, style: &ComputedValues) {
         self.border.top = self.compute_border_width_sapin(style.Border.border_top_width, style.Font.font_size);
@@ -141,12 +141,14 @@ impl BoxModel {
         self.border.left = self.compute_border_width_sapin(style.Border.border_left_width, style.Font.font_size);
     }
 
+    /*
     pub fn compute_padding(&mut self, style: CompleteStyle, containing_width: Au) {
         self.padding.top = self.compute_padding_length(style.padding_top(), containing_width, style.font_size());
         self.padding.right = self.compute_padding_length(style.padding_right(), containing_width, style.font_size());
         self.padding.bottom = self.compute_padding_length(style.padding_bottom(), containing_width, style.font_size());
         self.padding.left = self.compute_padding_length(style.padding_left(), containing_width, style.font_size());
     }
+    */
 
     pub fn compute_padding_sapin(&mut self, style: &ComputedValues, containing_width: Au) {
         self.padding.top = self.compute_padding_length_sapin(style.Padding.padding_top, containing_width, style.Font.font_size);
@@ -154,6 +156,7 @@ impl BoxModel {
         self.padding.bottom = self.compute_padding_length_sapin(style.Padding.padding_bottom, containing_width, style.Font.font_size);
         self.padding.left = self.compute_padding_length_sapin(style.Padding.padding_left, containing_width, style.Font.font_size);
     }
+
 
     pub fn noncontent_width(&self) -> Au {
         let left = self.margin.left + self.border.left + self.padding.left;
@@ -183,7 +186,7 @@ impl BoxModel {
 
     pub fn compute_border_width_sapin(&self, width: computed::Length, _font_size: computed::Length) -> Au {
         match width {
-            computed::Length(length) => Au(length as i32),
+            computed::Length(length) => Au(length as i32), // ryanc: length is already calculated in CSS.
         }
     }
 
@@ -194,13 +197,10 @@ impl BoxModel {
         }
     }
 
-    pub fn compute_padding_length_sapin(&self, padding: computed::LengthOrPercentage, _content_box_width: Au, _font_size: computed::Length) -> Au {
+    pub fn compute_padding_length_sapin(&self, padding: computed::LengthOrPercentage, content_box_width: Au, font_size: computed::Length) -> Au {
         match padding {
             computed::LP_Length(computed::Length(length)) => Au(length as i32),
-            _ => {
-                error!("Need to cover LP_Percentage")
-                Au::from_frac_px(1f)
-            }
+            computed::LP_Percentage(p) => content_box_width.scale_by((p/100.0) as float)
         }
     }
 }
