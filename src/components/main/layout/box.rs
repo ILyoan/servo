@@ -870,8 +870,10 @@ impl RenderBox {
             debug!("(font style) font families: `%s`", font_families);
 
             let font_size = match my_style_sapin.Font.font_size {
-                computed::Length(length) => geometry::px_to_pt((length/60) as float) // converting au to pt
+                computed::Length(length) => length as float
             };
+
+            let font_size = font_size/60.0;            
             debug!("(font style) font size: `%?px`", font_size);
 
             let (italic, oblique) = match my_style_sapin.Font.font_style {
