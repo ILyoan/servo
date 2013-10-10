@@ -6,7 +6,8 @@ use std::{vec, iterator};
 use std::ascii::StrAsciiExt;
 use cssparser::*;
 use style::namespaces::NamespaceMap;
-
+use wapcaplet::LwcString;
+use lwcstr_from_rust_str = wapcaplet::from_rust_string;
 
 pub struct Selector {
     compound_selectors: CompoundSelector,
@@ -39,8 +40,8 @@ pub enum Combinator {
 }
 
 pub enum SimpleSelector {
-    IDSelector(~str),
-    ClassSelector(~str),
+    IDSelector(LwcString),
+    ClassSelector(LwcString),
     LocalNameSelector(~str),
     NamespaceSelector(~str),
 
@@ -247,13 +248,13 @@ fn parse_one_simple_selector(iter: &mut Iter, namespaces: &NamespaceMap, inside_
                          -> Option<Option<Either<SimpleSelector, PseudoElement>>> {
     match iter.peek() {
         Some(&IDHash(_)) => match iter.next() {
-            Some(IDHash(id)) => Some(Some(Left(IDSelector(id)))),
+            Some(IDHash(id)) => Some(Some(Left(IDSelector(lwcstr_from_rust_str(id))))),
             _ => fail!("Implementation error, this should not happen."),
         },
         Some(&Delim('.')) => {
             iter.next();
             match iter.next() {
-                Some(Ident(class)) => Some(Some(Left(ClassSelector(class)))),
+                Some(Ident(class)) => Some(Some(Left(ClassSelector(lwcstr_from_rust_str(class))))),
                 _ => None,  // invalid selector
             }
         }

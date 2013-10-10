@@ -20,10 +20,14 @@ use std::cell::Cell;
 use std::comm;
 use std::str::eq_slice;
 use std::ascii::StrAsciiExt;
+use wapcaplet::LwcString;
+use lwcstr_from_rust_str = wapcaplet::from_rust_string;
 
 pub struct Element {
     node: Node<ScriptView>,
     tag_name: ~str,     // TODO: This should be an atom, not a ~str.
+    interned_id: Option<LwcString>,
+    interned_classes: ~[LwcString],
     attrs: ~[Attr],
     style_attribute: Option<Stylesheet>,
 }
@@ -123,6 +127,8 @@ impl<'self> Element {
         Element {
             node: Node::new(ElementNodeTypeId(type_id)),
             tag_name: tag_name,
+            interned_id: None,
+            interned_classes: ~[],
             attrs: ~[],
             style_attribute: None,
         }
@@ -155,6 +161,19 @@ impl<'self> Element {
             }
         }
         if !found {
+            if "id" == name {
+                let value = value_cell.take();
+                self.interned_id = Some(lwcstr_from_rust_str(value));
+                value_cell.put_back(value);
+            }
+            else if "class" == name {
+                let values = value_cell.take();
+                for s in values.split_iter(' ') {
+                    self.interned_classes.push(lwcstr_from_rust_str(s));
+                }
+                value_cell.put_back(values);
+            }
+            
             self.attrs.push(Attr::new(name.to_str(), value_cell.take().clone()));
         }
 

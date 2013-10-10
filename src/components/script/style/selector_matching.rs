@@ -13,6 +13,8 @@ use dom::node::{AbstractNode, LayoutView};
 use dom::element::Element;
 
 use std::cell::Cell;
+use wapcaplet::LwcString;
+use lwcstr_from_rust_str = wapcaplet::from_rust_string;
 
 pub enum StylesheetOrigin {
     UserAgentOrigin,
@@ -211,14 +213,23 @@ fn matches_simple_selector(selector: &SimpleSelector, element: &Element) -> bool
         LocalNameSelector(ref name) => element.tag_name.eq_ignore_ascii_case(name.as_slice()),
         NamespaceSelector(_) => false,  // TODO, when the DOM supports namespaces on elements.
         // TODO: case-sensitivity depends on the document type and quirks mode
-        // TODO: cache and intern IDs on elements.
-        IDSelector(ref id) => element.get_attr("id") == Some(id.as_slice()),
-        // TODO: cache and intern classe names on elements.
-        ClassSelector(ref class) => match element.get_attr("class") {
-            None => false,
-            // TODO: case-sensitivity depends on the document type and quirks mode
-            Some(ref class_attr)
-            => class_attr.split_iter(WHITESPACE).any(|c| c == class.as_slice()),
+        // TODO: cache on elements.
+        IDSelector(ref id) => {
+            match element.interned_id {
+                None => false,
+                Some(ref existing_id) => id == existing_id
+            }
+        },
+        // TODO: cache classe names on elements.
+        ClassSelector(ref class) => {
+            let mut ret = false;
+            for atom in element.interned_classes.iter() {
+                if atom == class {
+                    ret = true;
+                    break;
+                }
+            }
+            ret
         },
 
         AttrExists(ref attr) => match_attribute(attr, element, |_| true),

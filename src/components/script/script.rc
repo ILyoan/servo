@@ -18,6 +18,7 @@ extern mod js;
 extern mod netsurfcss;
 extern mod newcss (name = "css");
 extern mod cssparser;
+extern mod wapcaplet;
 extern mod servo_net (name = "net");
 extern mod servo_util (name = "util");
 extern mod servo_msg (name = "msg");

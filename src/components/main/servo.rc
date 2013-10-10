@@ -23,6 +23,7 @@ extern mod glut;
 extern mod js;
 extern mod layers;
 extern mod newcss (name = "css");
+extern mod wapcaplet;
 extern mod opengles;
 extern mod png;
 extern mod script;
