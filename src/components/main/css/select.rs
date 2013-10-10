@@ -153,7 +153,7 @@ ol, p, ul, center,
     li              { display: list-item }
     head            { display: none }
     span            { display: inline }
-    a               { display: inline }
+    a               { display: inline; text-decoration: underline; color: blue }
     table           { display: table }
     tr              { display: table-row }
     thead           { display: table-header-group }
