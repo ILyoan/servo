@@ -653,6 +653,8 @@ pub mod shorthands {
         }
     </%self:shorthand>
 
+    ${four_sides_shorthand("margin", "margin-%s", "specified::LengthOrPercentageOrAuto::parse")}
+    ${four_sides_shorthand("padding", "padding-%s", "specified::LengthOrPercentage::parse_non_negative")}
     ${four_sides_shorthand("border-color", "border-%s-color", "specified::CSSColor::parse")}
     ${four_sides_shorthand("border-style", "border-%s-style",
                            "border_top_style::from_component_value")}
