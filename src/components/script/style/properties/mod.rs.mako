@@ -225,7 +225,76 @@ pub mod longhands {
     ${predefined_type("height", "LengthOrPercentageOrAuto",
                       "computed::LPA_Auto",
                       "parse_non_negative")}
-
+    
+    <%self:single_component_value name="vertical-align" inherited="False">
+        #[deriving(Clone)]
+        pub enum SpecifiedValue {
+            SpecifiedBaseline,
+            SpecifiedSub,
+            SpecifiedSuper,
+            SpecifiedTop,
+            SpecifiedTextTop,
+            SpecifiedMiddle,
+            SpecifiedBottom,
+            SpecifiedTextBottom,
+            // percentage are the same as em.
+            SpecifiedLength(specified::Length),
+        }
+        /// baseline | sub | super | top | text-top | middle | bottom | text-bottom | <percentage> | <length>
+        pub fn from_component_value(input: &ComponentValue) -> Option<SpecifiedValue> {
+            match input {
+                &ast::Percentage(ref value) if value.value >= 0.
+                => Some(SpecifiedLength(specified::Em(value.value))),
+                &Dimension(ref value, ref unit) if value.value >= 0.
+                => specified::Length::parse_dimension(value.value, unit.as_slice())
+                    .map_move(SpecifiedLength),
+                &Ident(ref value) if value.eq_ignore_ascii_case("baseline")
+                => Some(SpecifiedBaseline),
+                &Ident(ref value) if value.eq_ignore_ascii_case("sub")
+                => Some(SpecifiedSub),
+                &Ident(ref value) if value.eq_ignore_ascii_case("super")
+                => Some(SpecifiedSuper),
+                &Ident(ref value) if value.eq_ignore_ascii_case("top")
+                => Some(SpecifiedTop),
+                &Ident(ref value) if value.eq_ignore_ascii_case("text-top")
+                => Some(SpecifiedTextTop),
+                &Ident(ref value) if value.eq_ignore_ascii_case("middle")
+                => Some(SpecifiedMiddle),
+                &Ident(ref value) if value.eq_ignore_ascii_case("bottom")
+                => Some(SpecifiedBottom),
+                &Ident(ref value) if value.eq_ignore_ascii_case("text-bottom")
+                => Some(SpecifiedTextBottom),
+                _ => None,
+            }
+        }
+        #[deriving(Clone)]
+        pub enum ComputedValue {
+            Baseline,
+            Sub,
+            Super,
+            Top,
+            TextTop,
+            Middle,
+            Bottom,
+            TextBottom,
+            Length(computed::Length),
+        }
+        #[inline] pub fn get_initial_value() -> ComputedValue { Baseline }
+        pub fn to_computed_value(value: SpecifiedValue, context: &computed::Context) -> ComputedValue {
+            match value {
+                SpecifiedBaseline => Baseline,
+                SpecifiedSub => Sub,
+                SpecifiedSuper => Super,
+                SpecifiedTop => Top,
+                SpecifiedTextTop => TextTop,
+                SpecifiedMiddle => Middle,
+                SpecifiedBottom => Bottom,
+                SpecifiedTextBottom => TextBottom,
+                SpecifiedLength(value) => Length(computed::compute_Length(value, context)),
+            }
+        }
+    </%self:single_component_value>
+    
     <%self:single_component_value name="line-height">
         #[deriving(Clone)]
         pub enum SpecifiedValue {
