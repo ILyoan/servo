@@ -149,11 +149,8 @@ impl TextRunScanner {
             (true, true)  => {
                 let old_box = in_boxes[self.clump.begin()];
                 let text = old_box.raw_text();
-                // let font_style = old_box.font_style();
-                // let decoration = old_box.text_decoration();
                 let font_style = old_box.font_style_sapin();
                 let decoration = old_box.text_decoration_sapin();
-
 
                 // TODO(#115): Use the actual CSS `white-space` property of the relevant style.
                 let compression = CompressWhitespaceNewline;
@@ -214,11 +211,8 @@ impl TextRunScanner {
                 // TODO(#177): Text run creation must account for the renderability of text by
                 // font group fonts. This is probably achieved by creating the font group above
                 // and then letting `FontGroup` decide which `Font` to stick into the text run.
-                // let font_style = in_boxes[self.clump.begin()].font_style();
                 let font_style = in_boxes[self.clump.begin()].font_style_sapin();
                 let fontgroup = ctx.font_ctx.get_resolved_font_for_style(&font_style);
-
-                // let decoration = in_boxes[self.clump.begin()].text_decoration();
                 let decoration = in_boxes[self.clump.begin()].text_decoration_sapin();
 
                 // TextRuns contain a cycle which is usually resolved by the teardown
@@ -226,7 +220,7 @@ impl TextRunScanner {
                 let clump = self.clump;
                 let run = if clump.length() != 0 && run_str.len() > 0 {
                     Some(@TextRun::new(fontgroup.fonts[0], run_str, decoration))
-                        // Some(@TextRun::new(fontgroup.fonts[0], run_str, ~"none"))
+                    // Some(@TextRun::new(fontgroup.fonts[0], run_str, ~"none"))
                 } else {
                     None
                 };

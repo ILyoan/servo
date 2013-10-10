@@ -189,25 +189,27 @@ impl LayoutTask {
     }
 
     fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
-        //printfln!("handle_add_stylesheet");
+        //error!("handle_add_stylesheet");
         self.css_select_ctx.append_sheet(sheet, OriginAuthor);
     }
 
     fn handle_add_stylesheet2(&mut self, sheet: CSSData) {
-        //printfln!("handle_add_stylesheet2");
-        printfln!("handle_add_stylesheet2");
-        let css_data = sheet.data.get_ref().clone();
-        if self.css_data.len() == 0 {
-            printfln!("1css_data: %?", css_data);
-            printfln!("1self.css_data: %?",self.css_data);
-            self.css_data = css_data;
-        } else if (self.css_data != css_data) && (css_data.len() > 0) {
-            printfln!("2css_data: %?", css_data);
-            printfln!("2self.css_data: %?",self.css_data);
-            self.css_data = css_data;
-        }
+        error!("handle_add_stylesheet2");
+        match sheet.data {
+            Some(ref css_data) => {
+                if self.css_data.len() == 0 {
+                    error!("1css_data: %?", css_data);
+                    error!("1self.css_data: %?",self.css_data);
+                    self.css_data = css_data.to_owned()
+                } else if (self.css_data != *css_data) && (css_data.len() > 0) {
+                    error!("2css_data: %?", css_data.clone());
+                    error!("2self.css_data: %?",self.css_data);
+                    self.css_data = css_data.to_owned();
+                }
 
-        self.css_data = sheet.data.get_ref().clone();
+            }
+            None => {}
+        }
         self.css_select_ctx.append_sheet(sheet.sheet, OriginAuthor);
     }
 
@@ -255,20 +257,20 @@ impl LayoutTask {
                     node.restyle_subtree(self.css_select_ctx);
                     let e = precise_time_ns();
                     let ms = ((e - s) as float / 1000000f);
-                    printfln!("1. netsurfcss css selector matching : %? ms", ms);
+                    error!("1. netsurfcss css selector matching : %? ms", ms);
                 }
 
                 let mut style = Stylist::new();
-                printfln!("css data: %?", self.css_data);
+                error!("css data: %?", self.css_data);
                 style.add_stylesheet(html4_default_style_str_tmp(), UserAgentOrigin);
                 style.add_stylesheet(self.css_data, AuthorOrigin);
 
-                printfln!("style: %?", style);
+                error!("style: %?", style);
                 let s = precise_time_ns();
                 style.get_computed_style(*node, None, None);
                 let e = precise_time_ns();
                 let ms = ((e - s) as float / 1000000f);
-                printfln!("2. simon`s css selector matching    : %? ms", ms);
+                error!("2. simon`s css selector matching    : %? ms", ms);
             }
         }
 
