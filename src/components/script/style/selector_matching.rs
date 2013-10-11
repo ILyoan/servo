@@ -314,7 +314,9 @@ impl StyleMethod for AbstractNode<LayoutView> {
         for nodes in node_per_task.move_iter() {
             if nodes.len() > 0 {
                 let chan = chan.clone();
-                do task::spawn_with(nodes) |nodes| {
+                let mut task = task::task();
+                task.sched_mode(task::SingleThreaded);
+                do task.spawn_with(nodes) |nodes| {
                     let mut count = 0;
                     let stylist: &Stylist = unsafe { cast::transmute(stylist) };
                     for node in nodes.move_iter() {
