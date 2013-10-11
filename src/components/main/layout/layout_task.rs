@@ -266,12 +266,14 @@ impl LayoutTask {
                 style.add_stylesheet(self.css_data, AuthorOrigin);
 
                 error!("style: %?", style);
-                let s = precise_time_ns();
+                let s1 = precise_time_ns();
                 node.match_subtree(&style);
+                let s2 = precise_time_ns();
                 node.cascade_subtree(None);
                 let e = precise_time_ns();
-                let ms = ((e - s) as float / 1000000f);
-                error!("2. simon`s css selector matching    : %? ms", ms);
+                let ms1 = ((s2 - s1) as float / 1000000f);
+                let ms2 = ((e - s2) as float / 1000000f);
+                error!("2. simon`s css total: %?ms (selector matching: %?ms, cascading: %?ms)", ms1 + ms2, ms1, ms2);
             }
         }
 
