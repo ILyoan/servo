@@ -267,7 +267,7 @@ impl LayoutTask {
 
                 error!("style: %?", style);
                 let s1 = precise_time_ns();
-                node.match_subtree(&style);
+                node.match_subtree_task(&style);
                 let s2 = precise_time_ns();
                 node.cascade_subtree(None);
                 let e = precise_time_ns();
