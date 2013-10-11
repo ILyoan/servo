@@ -796,6 +796,7 @@ pub enum DeclaredValue<T> {
     CSSWideKeyword(CSSWideKeyword),
 }
 
+#[deriving(Clone)]
 pub enum PropertyDeclaration {
     % for property in LONGHANDS:
         ${property.ident}_declaration(DeclaredValue<longhands::${property.ident}::SpecifiedValue>),
@@ -885,7 +886,7 @@ fn get_initial_values() -> ComputedValues {
 
 
 // Most specific/important declarations last
-pub fn cascade(applicable_declarations: &[@[PropertyDeclaration]],
+pub fn cascade(applicable_declarations: &[PropertyDeclaration],
                parent_style: Option< &ComputedValues>)
             -> ComputedValues {
     let initial_keep_alive;
@@ -907,17 +908,15 @@ pub fn cascade(applicable_declarations: &[@[PropertyDeclaration]],
                 "Inherit" if property.is_inherited else "Initial"}),
         % endfor
     };
-    for sub_list in applicable_declarations.iter() {
-        for declaration in sub_list.iter() {
-            match declaration {
-                % for property in LONGHANDS:
-                    &${property.ident}_declaration(ref value) => {
-                        // Overwrite earlier declarations.
-                        // TODO: can we avoid a copy?
-                        specified.${property.ident} = (*value).clone()
-                    }
-                % endfor
-            }
+    for declaration in applicable_declarations.iter() {
+        match declaration {
+            % for property in LONGHANDS:
+                &${property.ident}_declaration(ref value) => {
+                    // Overwrite earlier declarations.
+                    // TODO: can we avoid a copy?
+                    specified.${property.ident} = (*value).clone()
+                }
+            % endfor
         }
     }
     // This assumes that the computed and specified values have the same Rust type.

@@ -267,7 +267,8 @@ impl LayoutTask {
 
                 error!("style: %?", style);
                 let s = precise_time_ns();
-                style.get_computed_style(*node, None, None);
+                node.match_subtree(&style);
+                node.cascade_subtree(None);
                 let e = precise_time_ns();
                 let ms = ((e - s) as float / 1000000f);
                 error!("2. simon`s css selector matching    : %? ms", ms);

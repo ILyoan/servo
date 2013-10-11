@@ -27,7 +27,7 @@ use servo_util::tree::{TreeNode, TreeNodeRef};
 use servo_util::range::Range;
 use gfx::display_list::DisplayList;
 
-use style::properties::{ComputedValues};
+use style::properties::{ComputedValues, PropertyDeclaration};
 
 //
 // The basic Node structure
@@ -825,6 +825,7 @@ pub struct LayoutData {
 
     // using Sapin's selector matching
     style_sapin: Option<ComputedValues>,
+    applicable_declarations: ~[PropertyDeclaration],
 
     /// Description of how to account for recent style changes.
     restyle_damage: Option<int>,
@@ -840,6 +841,7 @@ impl LayoutData {
         LayoutData {
             style: None,
             style_sapin: None,
+            applicable_declarations: ~[],
             restyle_damage: None,
             boxes: DisplayBoxes { display_list: None, range: None },
         }

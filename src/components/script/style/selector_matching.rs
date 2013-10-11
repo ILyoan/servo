@@ -80,26 +80,17 @@ impl Stylist {
         }
     }
 
-    pub fn get_computed_style(&self, element: AbstractNode<LayoutView>,
-                              parent_style: Option<&ComputedValues>,
-                              pseudo_element: Option<PseudoElement>) {
-        assert!(element.is_element())
-        // Only the root does not inherit.
-        // The root has no parent or a non-element parent.
-        assert_eq!(
-            parent_style.is_none(),
-            match element.parent_node() {
-                None => true,
-                Some(ref node) => !node.is_element()
-            }
-        );
+    pub fn match_style(&self, element: AbstractNode<LayoutView>) {
+        assert!(element.is_element())        
         let mut applicable_declarations = ~[];  // TODO: use an iterator?
 
         macro_rules! append(
             ($rules: expr) => {
                 for rule in $rules.iter() {
-                    if matches_selector(rule.selector, element, pseudo_element) {
-                        applicable_declarations.push(rule.declarations)
+                    if matches_selector(rule.selector, element, None) {
+                        for declaration in rule.declarations.iter() {
+                            applicable_declarations.push((*declaration).clone())
+                        }
                     }
                 }
             };
@@ -114,21 +105,10 @@ impl Stylist {
         append!(self.user_rules.important);
         append!(self.ua_rules.important);
 
-        let computed_values = cascade(applicable_declarations, parent_style);
-/*
-        do element.with_imm_element |elem| {
-            printfln!("%?: %?", elem.tag_name, computed_values);
+        let cell = Cell::new(applicable_declarations);
+        do element.write_layout_data |data| {
+            data.applicable_declarations = cell.take();
         }
-*/
-        for child in element.children() {
-            if child.is_element() {
-                self.get_computed_style(child, Some(&computed_values), None);
-            }
-        }
-
-        //printfln!("# style: %?", computed_values);
-        let cell = Cell::new(computed_values);
-        element.write_layout_data(|data| data.style_sapin = Some(cell.take()));
     }
 }
 
@@ -265,6 +245,42 @@ fn match_attribute(attr: &AttrSelector, element: &Element, f: &fn(&str)-> bool) 
         None => match element.get_attr(attr.name) {
             None => false,
             Some(ref value) => f(value.as_slice())
+        }
+    }
+}
+
+
+pub trait StyleMethod {
+    fn match_subtree(&self, stylist: &Stylist);
+    fn cascade_subtree(&self, parent: Option<AbstractNode<LayoutView>>);
+}
+
+impl StyleMethod for AbstractNode<LayoutView> {
+    fn match_subtree(&self, stylist: &Stylist) {
+        stylist.match_style(*self);
+
+        for kid in self.children() {
+            if kid.is_element() {
+                kid.match_subtree(stylist);
+            }
+        }
+    }
+
+    fn cascade_subtree(&self, parent: Option<AbstractNode<LayoutView>>) {
+        let computed_values = do self.read_layout_data |data| {
+            match parent {
+                Some(p) => p.read_layout_data(|pdata| cascade(data.applicable_declarations, pdata.style_sapin.map(|v| v))),
+                None => cascade(data.applicable_declarations, None)
+            }
+        };
+
+        let cell = Cell::new(computed_values);
+        self.write_layout_data(|data| data.style_sapin = Some(cell.take()));
+
+        for kid in self.children() {
+            if kid.is_element() {
+                kid.cascade_subtree(Some(*self));
+            }
         }
     }
 }
