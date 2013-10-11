@@ -18,6 +18,7 @@ extern mod js;
 extern mod netsurfcss;
 extern mod newcss (name = "css");
 extern mod cssparser;
+extern mod wapcaplet;
 extern mod servo_net (name = "net");
 extern mod servo_util (name = "util");
 extern mod servo_msg (name = "msg");
@@ -144,4 +145,13 @@ pub mod script_task;
 
 
 // "New" (as of 2013-08) style system, not used yet but included to avoid bitrot.
-mod style;
+pub mod style {
+    pub mod stylesheets;
+    pub mod errors;
+    pub mod selectors;
+    pub mod selector_matching;
+    pub mod properties;
+    pub mod namespaces;
+    pub mod media_queries;
+    pub mod parsing_utils;
+}

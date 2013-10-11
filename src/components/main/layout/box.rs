@@ -4,6 +4,8 @@
 
 //! The `RenderBox` type, which represents the leaves of the layout tree.
 
+#[allow(unused_variable)];
+
 use css::node_style::StyledNode;
 use layout::context::LayoutContext;
 use layout::display_list_builder::{DisplayListBuilder, ExtraDisplayListData, ToGfxColor};
@@ -23,22 +25,33 @@ use gfx::display_list::{TextDisplayItemClass};
 use gfx::font::{FontStyle, FontWeight300};
 use gfx::geometry::Au;
 use gfx::text::text_run::TextRun;
-use newcss::color::rgb;
+use gfx::text::text_run::{CSSTextDecoration, CSSTextDecorationNone, CSSTextDecorationUnderline, CSSTextDecorationOverline, CSSTextDecorationLineThrough, CSSTextDecorationBlink};
+use newcss::color::{/*Color,*/ rgb};
+use newcss;
 use newcss::complete::CompleteStyle;
-use newcss::units::{Em, Px};
-use newcss::units::{Cursive, Fantasy, Monospace, SansSerif, Serif};
+//use newcss::units::{Em, Px};
+//use newcss::units::{Cursive, Fantasy, Monospace, SansSerif, Serif};
 use newcss::values::{CSSBorderStyleDashed, CSSBorderStyleSolid};
 use newcss::values::{CSSClearNone, CSSClearLeft, CSSClearRight, CSSClearBoth};
-use newcss::values::{CSSFontFamilyFamilyName, CSSFontFamilyGenericFamily};
-use newcss::values::{CSSFontSizeLength, CSSFontStyleItalic, CSSFontStyleNormal};
-use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSTextDecoration, CSSLineHeight, CSSVerticalAlign};
-use newcss::values::{CSSTextDecorationNone, CSSFloatNone, CSSPositionStatic};
-use newcss::values::{CSSDisplayInlineBlock, CSSDisplayInlineTable};
+//use newcss::values::{CSSFontFamilyFamilyName, CSSFontFamilyGenericFamily};
+//use newcss::values::{CSSFontSizeLength, CSSFontStyleItalic, CSSFontStyleNormal};
+//use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSLineHeight, CSSVerticalAlign};
+use newcss::values::{CSSVerticalAlign};
+// use newcss::values::{CSSFloatNone, CSSPositionStatic};
+// use newcss::values::{CSSDisplayInlineBlock, CSSDisplayInlineTable};
 use script::dom::node::{AbstractNode, LayoutView};
 use servo_net::image::holder::ImageHolder;
 use servo_net::local_image_cache::LocalImageCache;
 use servo_util::range::*;
 use extra::url::Url;
+use script::style::properties::common_types::computed;
+use script::style::properties::ComputedValues;
+use script::style::properties::longhands::{clear, font_family, font_style, vertical_align};
+use script::style::properties::longhands::{line_height, text_align/*, text_decoration*/};
+//use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
+use script::style::properties::longhands::{display, position, float};
+use cssparser::*;
+use gfx::geometry;
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -265,7 +278,7 @@ impl RenderBox {
     pub fn can_merge_with_box(&self, other: RenderBox) -> bool {
         match (self, &other) {
             (&UnscannedTextRenderBoxClass(*), &UnscannedTextRenderBoxClass(*)) => {
-                self.font_style() == other.font_style() && self.text_decoration() == other.text_decoration()
+                self.font_style_sapin() == other.font_style_sapin() && self.text_decoration_sapin() == other.text_decoration_sapin()
             },
             (&TextRenderBoxClass(text_box_a), &TextRenderBoxClass(text_box_b)) => {
                 managed::ptr_eq(text_box_a.run, text_box_b.run)
@@ -290,17 +303,7 @@ impl RenderBox {
                 let mut left_range = Range::new(text_box.range.begin(), 0);
                 let mut right_range: Option<Range> = None;
 
-                debug!("split_to_width: splitting text box (strlen=%u, range=%?, avail_width=%?)",
-                       text_box.run.text.len(),
-                       text_box.range,
-                       max_width);
-
                 for (glyphs, offset, slice_range) in text_box.run.iter_slices_for_range(&text_box.range) {
-                    debug!("split_to_width: considering slice (offset=%?, range=%?, remain_width=%?)",
-                           offset,
-                           slice_range,
-                           remaining_width);
-
                     let metrics = text_box.run.metrics_for_slice(glyphs, &slice_range);
                     let advance = metrics.advance_width;
                     let should_continue: bool;
@@ -387,31 +390,31 @@ impl RenderBox {
     //
     // TODO(eatkinson): integrate with
     // get_min_width and get_pref_width?
-    fn guess_width (&self) -> Au {
+    fn guess_width_sapin (&self) -> Au {
         do self.with_base |base| {
             if(!base.node.is_element()) {
                 Au(0)
             } else {
-                let style = self.style();
-                let font_size = style.font_size();
-                let width = MaybeAuto::from_width(style.width(),
+                let style_sapin = self.style_sapin();
+                let font_size = style_sapin.Font.font_size;
+                let width = MaybeAuto::from_width_sapin(style_sapin.Box.width,
                                                   Au(0),
                                                   font_size).specified_or_zero();
-                let margin_left = MaybeAuto::from_margin(style.margin_left(),
+                let margin_left = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_left,
                                                          Au(0),
                                                          font_size).specified_or_zero();
-                let margin_right = MaybeAuto::from_margin(style.margin_right(),
+                let margin_right = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_right,
                                                           Au(0),
                                                           font_size).specified_or_zero();
-                let padding_left = base.model.compute_padding_length(style.padding_left(),
+                let padding_left = base.model.compute_padding_length_sapin(style_sapin.Padding.padding_left,
                                                                      Au(0),
                                                                      font_size);
-                let padding_right = base.model.compute_padding_length(style.padding_right(),
+                let padding_right = base.model.compute_padding_length_sapin(style_sapin.Padding.padding_right,
                                                                       Au(0),
                                                                       font_size);
-                let border_left = base.model.compute_border_width(style.border_left_width(),
+                let border_left = base.model.compute_border_width_sapin(style_sapin.Border.border_left_width,
                                                                   font_size);
-                let border_right = base.model.compute_border_width(style.border_right_width(),
+                let border_right = base.model.compute_border_width_sapin(style_sapin.Border.border_right_width,
                                                                    font_size);
 
                 width + margin_left + margin_right + padding_left + padding_right +
@@ -425,7 +428,8 @@ impl RenderBox {
         // FIXME(pcwalton): I think we only need to calculate this if the damage says that CSS
         // needs to be restyled.
 
-        self.guess_width() + match *self {
+        //self.guess_width() + match *self {
+        self.guess_width_sapin() + match *self {
             // TODO: This should account for the minimum width of the box element in isolation.
             // That includes borders, margins, and padding, but not child widths. The block
             // `FlowContext` will combine the width of this element and that of its children to
@@ -446,7 +450,8 @@ impl RenderBox {
 
     /// Returns the *preferred width* of this render box as defined by the CSS specification.
     pub fn get_pref_width(&self, _: &LayoutContext) -> Au {
-        self.guess_width() + match *self {
+        //self.guess_width() + match *self {
+        self.guess_width_sapin() + match *self {            
             // TODO: This should account for the preferred width of the box element in isolation.
             // That includes borders, margins, and padding, but not child widths. The block
             // `FlowContext` will combine the width of this element and that of its children to
@@ -543,9 +548,10 @@ impl RenderBox {
         (Au(0), Au(0))
     }
 
-    pub fn compute_padding(&self, cb_width: Au) {
+
+    pub fn compute_padding_sapin(&self, cb_width: Au) {
         do self.with_mut_base |base| {
-            base.model.compute_padding(base.node.style(), cb_width);
+            base.model.compute_padding_sapin(base.node.style_sapin(), cb_width);
         }
     }
 
@@ -595,6 +601,12 @@ impl RenderBox {
     pub fn style(&self) -> CompleteStyle {
         self.with_base(|base| base.node.style())
     }
+
+    // ryanc
+    pub fn style_sapin(&self) -> &ComputedValues {
+        self.with_base(|base| base.node.style_sapin())
+    }
+
 
     /// A convenience function to access the DOM node that this render box represents.
     pub fn node(&self) -> AbstractNode<LayoutView> {
@@ -662,7 +674,8 @@ impl RenderBox {
                 self.paint_background_if_applicable(list, &absolute_box_bounds);
 
                 let nearest_ancestor_element = self.nearest_ancestor_element();
-                let color = nearest_ancestor_element.style().color().to_gfx_color();
+                //let color = nearest_ancestor_element.style().color().to_gfx_color();
+                let color = color_exchange2(nearest_ancestor_element.style_sapin().Color.color).to_gfx_color();
 
                 // Create the text box.
                 do list.with_mut_ref |list| {
@@ -803,7 +816,7 @@ impl RenderBox {
         // doesn't have a render box".
         let nearest_ancestor_element = self.nearest_ancestor_element();
 
-        let background_color = nearest_ancestor_element.style().background_color();
+        let background_color = color_exchange1(nearest_ancestor_element.style_sapin().Background.background_color);
         if !background_color.alpha.approx_eq(&0.0) {
             do list.with_mut_ref |list| {
                 let solid_color_display_item = ~SolidColorDisplayItem {
@@ -820,52 +833,57 @@ impl RenderBox {
     }
 
     pub fn clear(&self) -> Option<ClearType> {
+        // Replaced by sonwow
         let style = self.style();
         match style.clear() {
             CSSClearNone => None,
             CSSClearLeft => Some(ClearLeft),
             CSSClearRight => Some(ClearRight),
             CSSClearBoth => Some(ClearBoth)
+        };
+
+        let style = self.style_sapin();
+        match style.Box.clear {
+            clear::none => None,
+            clear::left => Some(ClearLeft),
+            clear::right => Some(ClearRight),
+            clear::both => Some(ClearBoth)
         }
     }
 
+
     /// Converts this node's computed style to a font style used for rendering.
-    pub fn font_style(&self) -> FontStyle {
-        fn get_font_style(element: AbstractNode<LayoutView>) -> FontStyle {
-            let my_style = element.style();
+    pub fn font_style_sapin(&self) -> FontStyle {
+        fn get_font_style_sapin(element: AbstractNode<LayoutView>) -> FontStyle {
+            let my_style_sapin = element.style_sapin();
 
             debug!("(font style) start: %?", element.type_id());
 
             // FIXME: Too much allocation here.
-            let font_families = do my_style.font_family().map |family| {
+            let font_families = do my_style_sapin.Font.font_family.map |family| {
                 match *family {
-                    CSSFontFamilyFamilyName(ref family_str) => (*family_str).clone(),
-                    CSSFontFamilyGenericFamily(Serif)       => ~"serif",
-                    CSSFontFamilyGenericFamily(SansSerif)   => ~"sans-serif",
-                    CSSFontFamilyGenericFamily(Cursive)     => ~"cursive",
-                    CSSFontFamilyGenericFamily(Fantasy)     => ~"fantasy",
-                    CSSFontFamilyGenericFamily(Monospace)   => ~"monospace",
+                    font_family::FamilyName(ref name) => name.to_str()
                 }
             };
+
             let font_families = font_families.connect(", ");
             debug!("(font style) font families: `%s`", font_families);
 
-            let font_size = match my_style.font_size() {
-                CSSFontSizeLength(Px(length)) => length,
-                // todo: this is based on a hard coded font size, should be the parent element's font size
-                CSSFontSizeLength(Em(length)) => length * 16f,
-                _ => 16f // px units
+            let font_size = match my_style_sapin.Font.font_size {
+                computed::Length(length) => length as float
             };
-            debug!("(font style) font size: `%fpx`", font_size);
 
-            let (italic, oblique) = match my_style.font_style() {
-                CSSFontStyleNormal => (false, false),
-                CSSFontStyleItalic => (true, false),
-                CSSFontStyleOblique => (false, true),
+            let font_size = font_size/60.0;            
+            debug!("(font style) font size: `%?px`", font_size);
+
+            let (italic, oblique) = match my_style_sapin.Font.font_style {
+                font_style::normal => (false, false),
+                font_style::italic => (true, false),
+                font_style::oblique => (false, true),
             };
 
             FontStyle {
-                pt_size: font_size,
+                pt_size: font_size as float,
                 weight: FontWeight300,
                 italic: italic,
                 oblique: oblique,
@@ -886,7 +904,7 @@ impl RenderBox {
         if font_style_cached.is_some() {
             return font_style_cached.unwrap();
         } else {
-            let font_style = get_font_style(self.nearest_ancestor_element());
+            let font_style = get_font_style_sapin(self.nearest_ancestor_element());
             match *self {
                 UnscannedTextRenderBoxClass(ref box) => {
                     box.font_style = Some(font_style.clone());
@@ -898,54 +916,70 @@ impl RenderBox {
     }
 
     /// Returns the text alignment of the computed style of the nearest ancestor-or-self `Element`
-    /// node.
-    pub fn text_align(&self) -> CSSTextAlign {
-        self.nearest_ancestor_element().style().text_align()
+
+    pub fn text_align_sapin(&self) -> text_align::SpecifiedValue {
+        self.nearest_ancestor_element().style_sapin().Text.text_align
     }
 
-    pub fn line_height(&self) -> CSSLineHeight {
-        self.nearest_ancestor_element().style().line_height()
+    pub fn line_height_sapin(&self) -> line_height::ComputedValue {
+        self.nearest_ancestor_element().style_sapin().Box.line_height
     }
 
     pub fn vertical_align(&self) -> CSSVerticalAlign {
         self.nearest_ancestor_element().style().vertical_align()
     }
 
-    /// Returns the text decoration of the computed style of the nearest `Element` node
-    pub fn text_decoration(&self) -> CSSTextDecoration {
+    pub fn vertical_align_sapin(&self) -> vertical_align::ComputedValue {
+        self.nearest_ancestor_element().style_sapin().Box.vertical_align
+    }
+
+    // ymin
+    pub fn text_decoration_sapin(&self) -> CSSTextDecoration {
         /// Computes the propagated value of text-decoration, as specified in CSS 2.1 § 16.3.1
         /// TODO: make sure this works with anonymous box generation.
-        fn get_propagated_text_decoration(element: AbstractNode<LayoutView>) -> CSSTextDecoration {
+        fn get_propagated_text_decoration_sapin(element: AbstractNode<LayoutView>) -> CSSTextDecoration {
             //Skip over non-element nodes in the DOM
             if(!element.is_element()){
                 return match element.parent_node() {
                     None => CSSTextDecorationNone,
-                    Some(parent) => get_propagated_text_decoration(parent),
+                    Some(parent) => get_propagated_text_decoration_sapin(parent),
                 };
             }
 
             //FIXME: is the root param on display() important?
-            let display_in_flow = match element.style().display(false) {
-                CSSDisplayInlineTable | CSSDisplayInlineBlock => false,
+            // FIXME: ymin ( display is flase or true ? )
+            let display_in_flow_sapin = match element.style_sapin().Box.display {
+                display::inline_table | display::inline_block => false,
                 _ => true,
             };
 
-            let position = element.style().position();
-            let float = element.style().float();
+            // let position = element.style().position();
+            let position_sapin = element.style_sapin().Box.position; // ymin
+            let float_sapin = element.style_sapin().Box.float; // ymin
 
-            let in_flow = (position == CSSPositionStatic) && (float == CSSFloatNone) &&
-                display_in_flow;
+            let bool_position_sapin = match position_sapin { position::static_ => true, _ => false };
+            let bool_float_sapin = match float_sapin { float::none => true, _ => false };
+            let in_flow_sapin = bool_position_sapin && bool_float_sapin && display_in_flow_sapin;
 
-            let text_decoration = element.style().text_decoration();
+            let text_decoration_sapin = element.style_sapin().Text.text_decoration;
+            //printfln!("text_deco_sapin: %?", text_decoration_sapin);
 
-            if(text_decoration == CSSTextDecorationNone && in_flow){
-                match element.parent_node() {
+            //let text_decoration = element.style().text_decoration();
+            //printfln!("text_deco: %?", text_decoration);
+
+            // text_deco_sapin: script::style::properties::longhands::text_decoration::SpecifiedValue{underline: false, overline: true, line_through: false}
+            // text_deco: CSSTextDecorationOverline ...
+            if (text_decoration_sapin.underline == false && text_decoration_sapin.overline == false && text_decoration_sapin.line_through == false)
+                && in_flow_sapin {
+                    match element.parent_node() {
                     None => CSSTextDecorationNone,
-                    Some(parent) => get_propagated_text_decoration(parent),
+                    Some(parent) => get_propagated_text_decoration_sapin(parent),
                 }
-            }
-            else {
-                text_decoration
+            } else {
+                if text_decoration_sapin.underline == true { CSSTextDecorationUnderline }
+                else if text_decoration_sapin.overline == true { CSSTextDecorationOverline }
+                else if text_decoration_sapin.line_through == true { CSSTextDecorationLineThrough }
+                else { CSSTextDecorationBlink }
             }
         }
 
@@ -962,7 +996,7 @@ impl RenderBox {
         if text_decoration_cached.is_some() {
             return text_decoration_cached.unwrap();
         } else {
-            let text_decoration = get_propagated_text_decoration(self.nearest_ancestor_element());
+            let text_decoration = get_propagated_text_decoration_sapin(self.nearest_ancestor_element());
             match *self {
                 UnscannedTextRenderBoxClass(ref box) => {
                     box.text_decoration = Some(text_decoration.clone());
@@ -1022,10 +1056,12 @@ impl RenderBox {
         if border.is_zero() {
             return
         }
-
         let (top_color, right_color, bottom_color, left_color) = (self.style().border_top_color(), self.style().border_right_color(), self.style().border_bottom_color(), self.style().border_left_color());
         let (top_style, right_style, bottom_style, left_style) = (self.style().border_top_style(), self.style().border_right_style(), self.style().border_bottom_style(), self.style().border_left_style());
-        // Append the border to the display list.
+        //let (top_color, right_color, bottom_color, left_color) = (color_exchange1(self.style_sapin().Border.border_top_color), color_exchange1(self.style_sapin().Border.border_right_color), color_exchange1(self.style_sapin().Border.border_bottom_color), color_exchange1(self.style_sapin().Border.border_left_color));
+        //let (top_style, right_style, bottom_style, left_style) = (self.style_sapin().Border.border_top_style, self.style_sapin().Border.border_right_style, self.style_sapin().Border.border_bottom_style, self.style_sapin().Border.border_left_style);
+
+	// Append the border to the display list.
         do list.with_mut_ref |list| {
             let border_display_item = ~BorderDisplayItem {
                 base: BaseDisplayItem {
@@ -1049,4 +1085,23 @@ impl RenderBox {
             list.append_item(BorderDisplayItemClass(border_display_item))
         }
     }
+}
+
+fn color_exchange1(input: Color) -> newcss::color::Color {
+	let mut output = newcss::color::Color { red: 0, green: 0, blue: 0, alpha: 0f };
+	match input {
+                CurrentColor => {}
+                RGBA(rgba) => {
+			output.red = (rgba.red * 255.0) as u8;
+			output.green = (rgba.green * 255.0) as u8;
+			output.blue = (rgba.blue * 255.0) as u8;
+			output.alpha = rgba.alpha as float;
+		}
+        };
+	output
+}
+
+fn color_exchange2(input: RGBA) -> newcss::color::Color {
+    let output = newcss::color::Color { red: (input.red * 255.0) as u8, green: (input.green * 255.0) as u8, blue: (input.blue * 255.0) as u8, alpha: input.alpha as float };
+    output
 }

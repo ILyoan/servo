@@ -4,6 +4,8 @@
 
 //! CSS block layout.
 
+#[allow(unused_variable)];
+
 use layout::box::{RenderBox};
 use layout::context::LayoutContext;
 use layout::display_list_builder::{DisplayListBuilder, ExtraDisplayListData};
@@ -72,7 +74,7 @@ impl BlockLayout for FlowContext {
     fn starts_block_flow(&self) -> bool {
         match *self {
             BlockFlow(*) | InlineBlockFlow(*) | FloatFlow(*) => true,
-            _ => false 
+            _ => false
         }
     }
 }
@@ -115,13 +117,13 @@ impl BlockFlowData {
         self.common.pref_width = pref_width;
         self.common.num_floats = num_floats;
     }
- 
+
     /// Computes left and right margins and width based on CSS 2.1 secion 10.3.3.
     /// Requires borders and padding to already be computed
     fn compute_horiz( &self,
-                            width: MaybeAuto, 
-                            left_margin: MaybeAuto, 
-                            right_margin: MaybeAuto, 
+                            width: MaybeAuto,
+                            left_margin: MaybeAuto,
+                            right_margin: MaybeAuto,
                             available_width: Au) -> (Au, Au, Au) {
 
         //If width is not 'auto', and width + margins > available_width, all 'auto' margins are treated as '0'
@@ -130,7 +132,7 @@ impl BlockFlowData {
             Specified(width) => {
                 let left = left_margin.specified_or_zero();
                 let right = right_margin.specified_or_zero();
-                
+
                 if((left + right + width) > available_width) {
                     (Specified(left), Specified(right))
                 } else {
@@ -142,7 +144,7 @@ impl BlockFlowData {
         //Invariant: left_margin_Au + width_Au + right_margin_Au == available_width
         let (left_margin_Au, width_Au, right_margin_Au) = match (left_margin, width, right_margin) {
             //If all have a computed value other than 'auto', the system is over-constrained and we need to discard a margin.
-            //if direction is ltr, ignore the specified right margin and solve for it. If it is rtl, ignore the specified 
+            //if direction is ltr, ignore the specified right margin and solve for it. If it is rtl, ignore the specified
             //left margin. FIXME(eatkinson): this assumes the direction is ltr
             (Specified(margin_l), Specified(width), Specified(_margin_r)) => (margin_l, width, available_width - (margin_l + width )),
 
@@ -172,7 +174,7 @@ impl BlockFlowData {
     ///
     /// Dual boxes consume some width first, and the remainder is assigned to all child (block)
     /// contexts.
-    pub fn assign_widths_block(&mut self, ctx: &LayoutContext) { 
+    pub fn assign_widths_block(&mut self, ctx: &LayoutContext) {
         debug!("assign_widths_block: assigning width for flow %?",  self.common.id);
         if self.is_root {
             debug!("Setting root position");
@@ -187,29 +189,48 @@ impl BlockFlowData {
         let mut x_offset = Au(0);
 
         for &box in self.box.iter() {
-            let style = box.style();
+            // let style = box.style();
+            let style_sapin = box.style_sapin();
+
             do box.with_model |model| {
                 //Can compute border width here since it doesn't depend on anything
-                model.compute_borders(style);
+                // model.compute_borders(style);
+                model.compute_borders_sapin(style_sapin);
 
                 // Can compute padding here since we know containing block width.
-                model.compute_padding(style, remaining_width);
+                // model.compute_padding(style, remaining_width);
+                model.compute_padding_sapin(style_sapin, remaining_width);
 
                 // Margins are 0 right now so model.noncontent_width() is just borders + padding.
                 let available_width = remaining_width - model.noncontent_width();
 
                 // Top and bottom margins for blocks are 0 if auto.
+                /*
                 let margin_top = MaybeAuto::from_margin(style.margin_top(),
                                                         remaining_width,
                                                         style.font_size()).specified_or_zero();
                 let margin_bottom = MaybeAuto::from_margin(style.margin_bottom(),
                                                            remaining_width,
                                                            style.font_size()).specified_or_zero();
+                */
 
+                let margin_top = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_top,
+                                                              remaining_width,
+                                                              style_sapin.Font.font_size).specified_or_zero();
+                let margin_bottom = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_bottom,
+                                                                 remaining_width,
+                                                                 style_sapin.Font.font_size).specified_or_zero();
+                /*
                 let (width, margin_left, margin_right) =
                     (MaybeAuto::from_width(style.width(), remaining_width, style.font_size()),
                      MaybeAuto::from_margin(style.margin_left(), remaining_width, style.font_size()),
                      MaybeAuto::from_margin(style.margin_right(), remaining_width, style.font_size()));
+                */
+
+                let (width, margin_left, margin_right) =
+                    (MaybeAuto::from_width_sapin(style_sapin.Box.width, remaining_width, style_sapin.Font.font_size),
+                     MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_left, remaining_width, style_sapin.Font.font_size),
+                     MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_right, remaining_width, style_sapin.Font.font_size));
 
                 let (width, margin_left, margin_right) = self.compute_horiz(width,
                                                                             margin_left,
@@ -223,6 +244,9 @@ impl BlockFlowData {
 
                 x_offset = model.offset();
                 remaining_width = width;
+
+                debug!("==> model: %?",  model);
+
             }
 
             do box.with_mut_base |base| {
@@ -340,7 +364,7 @@ impl BlockFlowData {
                             // The top margin collapses with its first in-flow block-level child's
                             // top margin if the parent has no top boder, no top padding.
                             if first_inflow && top_margin_collapsible {
-                                // If top-margin of parent is less than top-margin of its first child, 
+                                // If top-margin of parent is less than top-margin of its first child,
                                 // the parent box goes down until its top is aligned with the child.
                                 if margin_top < model.margin.top {
                                     // TODO: The position of child floats should be updated and this
@@ -350,7 +374,7 @@ impl BlockFlowData {
                                     margin_top = model.margin.top;
                                 }
                             }
-                            // The bottom margin of an in-flow block-level element collapses 
+                            // The bottom margin of an in-flow block-level element collapses
                             // with the top margin of its next in-flow block-level sibling.
                             collapsing = geometry::min(model.margin.top, collapsible);
                             collapsible = model.margin.bottom;
@@ -389,7 +413,7 @@ impl BlockFlowData {
         } else {
             Au(0)
         };
-        
+
         // TODO: A box's own margins collapse if the 'min-height' property is zero, and it has neither
         // top or bottom borders nor top or bottom padding, and it has a 'height' of either 0 or 'auto',
         // and it does not contain a line box, and all of its in-flow children's margins (if any) collapse.
@@ -402,9 +426,14 @@ impl BlockFlowData {
         };
 
         for &box in self.box.iter() {
-            let style = box.style();
-            let maybe_height = MaybeAuto::from_height(style.height(), Au(0), style.font_size());
+            let style_sapin = box.style_sapin();
+
+            // let maybe_height = MaybeAuto::from_height(style.height(), Au(0), style.font_size());
+            // let maybe_height = maybe_height.specified_or_zero();
+
+            let maybe_height = MaybeAuto::from_height_sapin(style_sapin.Box.height, Au(0), style_sapin.Font.font_size);
             let maybe_height = maybe_height.specified_or_zero();
+
             height = geometry::max(height, maybe_height);
         }
 
@@ -430,7 +459,7 @@ impl BlockFlowData {
         self.common.position.size.height = height + noncontent_height;
 
         if inorder {
-            let extra_height = height - (cur_y - top_offset) + bottom_offset; 
+            let extra_height = height - (cur_y - top_offset) + bottom_offset;
             self.common.floats_out = float_ctx.translate(Point2D(left_offset, -extra_height));
         } else {
             self.common.floats_out = self.common.floats_in.clone();
@@ -439,8 +468,8 @@ impl BlockFlowData {
 
     pub fn build_display_list_block<E:ExtraDisplayListData>(&mut self,
                                                             builder: &DisplayListBuilder,
-                                                            dirty: &Rect<Au>, 
-                                                            list: &Cell<DisplayList<E>>) 
+                                                            dirty: &Rect<Au>,
+                                                            list: &Cell<DisplayList<E>>)
                                                             -> bool {
 
         if self.common.node.is_iframe_element() {

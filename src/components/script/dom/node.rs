@@ -27,6 +27,8 @@ use servo_util::tree::{TreeNode, TreeNodeRef};
 use servo_util::range::Range;
 use gfx::display_list::DisplayList;
 
+use style::properties::{ComputedValues};
+
 //
 // The basic Node structure
 //
@@ -548,7 +550,7 @@ impl Node<ScriptView> {
     }
 
     pub fn GetPreviousSibling(&self) -> Option<AbstractNode<ScriptView>> {
-        self.prev_sibling 
+        self.prev_sibling
     }
 
     pub fn GetNextSibling(&self) -> Option<AbstractNode<ScriptView>> {
@@ -821,6 +823,9 @@ pub struct LayoutData {
     /// The results of CSS styling for this node.
     style: Option<CompleteSelectResults>,
 
+    // using Sapin's selector matching
+    style_sapin: Option<ComputedValues>,
+
     /// Description of how to account for recent style changes.
     restyle_damage: Option<int>,
 
@@ -834,6 +839,7 @@ impl LayoutData {
     pub fn new() -> LayoutData {
         LayoutData {
             style: None,
+            style_sapin: None,
             restyle_damage: None,
             boxes: DisplayBoxes { display_list: None, range: None },
         }
@@ -854,6 +860,15 @@ impl AbstractNode<LayoutView> {
     pub fn write_layout_data<R>(self, blk: &fn(data: &mut LayoutData) -> R) -> R {
         do self.with_mut_base |b| {
             blk(&mut b.layout_data)
+        }
+    }
+
+    pub fn style_sapin(self) -> &ComputedValues {
+        do self.read_layout_data |layout_data| {
+            match layout_data.style_sapin {
+                None => fail!(~"style_sapin() called on node without a style"),
+                Some(ref s) => unsafe { cast::transmute_region(s)}
+            }
         }
     }
 }

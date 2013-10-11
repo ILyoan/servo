@@ -1,0 +1,151 @@
+diff --git a/src/components/main/layout/box_builder.rs b/src/components/main/layout/box_builder.rs
+index 6703819..e88ed51 100644
+--- a/src/components/main/layout/box_builder.rs
++++ b/src/components/main/layout/box_builder.rs
+@@ -442,7 +442,7 @@ impl LayoutTreeBuilder {
+                 DoctypeNodeTypeId | CommentNodeTypeId => return NoGenerator,
+             }
+         };
+-        // printfln!("display: %?", display);
++        printfln!("display: %?", display);
+ 
+         let sibling_flow: Option<&mut FlowContext> = sibling_generator.map_mut(|gen| &mut *gen.flow);
+ 
+diff --git a/src/components/main/layout/inline.rs b/src/components/main/layout/inline.rs
+index 34d645a..32ba95d 100644
+--- a/src/components/main/layout/inline.rs
++++ b/src/components/main/layout/inline.rs
+@@ -183,16 +183,16 @@ impl LineboxScanner {
+     // ymin
+     fn calculate_line_height_sapin(&self, box: RenderBox, font_size: Au) -> Au {
+         match box.line_height_sapin() {
+-            line_height::Normal => font_size.scale_by(1.14f),
++            line_height::Normal => Au(3*60), // font_size.scale_by(1.14f),
+             line_height::Length(length) => {
+                 match length {
+-                    computed::Length(length) => font_size.scale_by(length as float)
++                    computed::Length(l) => Au(l as i32) //font_size.scale_by(length as float)
+                 }
+             },
+-            line_height::Number(number) => font_size.scale_by(number as float),
++            line_height::Number(number) => Au(number as i32), // font_size.scale_by(number as float),
+         }
+     }
+-    
++
+     fn box_height(&self, box: RenderBox) -> Au {
+         match box {
+             ImageRenderBoxClass(image_box) => {
+@@ -209,8 +209,8 @@ impl LineboxScanner {
+                 // Compute the height based on the line-height and font size
+                 let text_bounds = run.metrics_for_range(range).bounding_box;
+                 let em_size = text_bounds.size.height;
+-                let line_height = self.calculate_line_height(box, em_size);
+-                let _line_height_sapin = self.calculate_line_height_sapin(box, em_size);
++                //let line_height = self.calculate_line_height(box, em_size);
++                let line_height = self.calculate_line_height_sapin(box, em_size);
+ 
+                 line_height
+             }
+@@ -246,17 +246,21 @@ impl LineboxScanner {
+         // Initally, pretend a splitable box has 0 width.
+         // We will move it later if it has nonzero width
+         // and that causes problems.
++
++        // ryanc
+         let placement_width = if splitable {
+             Au(0)
+         } else {
+-            first_box.position().size.width
++            // first_box.position().size.width
++            Au(*first_box.position().size.width / 100)
+         };
+ 
++        // ryanc
+         let mut info = PlacementInfo {
+             width: placement_width,
+-            height: first_box.position().size.height,
++            height: Au(*first_box.position().size.height / 100),
+             ceiling: ceiling,
+-            max_width: flow.common.position.size.width,
++            max_width: Au(*flow.common.position.size.width / 100),
+             f_type: FloatLeft
+         };
+ 
+@@ -637,6 +641,7 @@ impl InlineFlowData {
+             // Get the text alignment.
+             // TODO(Issue #222): use 'text-align' property from InlineFlow's
+             // block container, not from the style of the first box child.
++            /*
+             let linebox_align;
+             if line.range.begin() < self.boxes.len() {
+                 let first_box = self.boxes[line.range.begin()];
+@@ -645,6 +650,7 @@ impl InlineFlowData {
+                 // Nothing to lay out, so assume left alignment.
+                 linebox_align = CSSTextAlignLeft;
+             }
++            */
+ 
+             // ymin
+             let linebox_align_sapin;
+@@ -656,6 +662,7 @@ impl InlineFlowData {
+                 linebox_align_sapin = text_align::left;
+             }
+ 
++            /*
+             // Set the box x positions
+             let mut offset_x = line.bounds.origin.x;
+             match linebox_align {
+@@ -688,8 +695,10 @@ impl InlineFlowData {
+                     }
+                 }
+             };
++            */
+ 
+             // ymin
++            let mut offset_x = line.bounds.origin.x;
+             match linebox_align_sapin {
+                 text_align::left | text_align::justify => {
+                     for i in line.range.eachi() {
+@@ -804,7 +813,6 @@ impl InlineFlowData {
+                     let parent = base.node.parent_node().map_default(base.node, |parent| *parent);
+                     // TODO: When the calculation of font-size style is supported, it should be updated.
+ 
+-
+                     // ryanc: replacing this line
+                     /*
+                     let font_size = match parent.style().font_size() {
+@@ -818,7 +826,7 @@ impl InlineFlowData {
+                     let font_size = match parent.style_sapin().Font.font_size {
+                         computed::Length(length) => length as float,
+                     };
+-                    parent_text_top = Au::from_frac_px(font_size);
++                    parent_text_top = Au(font_size as i32);
+                 }
+ 
+                 // This flag decides whether topmost and bottommost are updated or not.
+@@ -878,17 +886,18 @@ impl InlineFlowData {
+                     },
+                     CSSVerticalAlignLength(length) => {
+                         let length_offset = match length {
+-//                            Em(l) => Au::from_frac_px(cur_box.font_style().pt_size * l),
+-                            Em(l) => Au::from_frac_px(cur_box.font_style_sapin().pt_size * l),
+-                            Px(l) => Au::from_frac_px(l),
++                            // Em(l) => Au::from_frac_px(cur_box.font_style().pt_size * l),
++                            Em(l) => Au::(l as i32),
++                            // Px(l) => Au::from_frac_px(l),
++                            Px(l) => Au(l as i32),
+                         };
+                         -(length_offset + ascent)
+                     },
+                     CSSVerticalAlignPercentage(p) => {
+-//                        let pt_size = cur_box.font_style().pt_size;
++                        // let pt_size = cur_box.font_style().pt_size;
+                         let pt_size = cur_box.font_style_sapin().pt_size;
+-//                        let line_height = scanner.calculate_line_height(cur_box, Au::from_pt(pt_size));
+-                        let line_height = scanner.calculate_line_height_sapin(cur_box, Au::from_pt(pt_size));
++                        // let line_height = scanner.calculate_line_height(cur_box, Au::from_pt(pt_size));
++                        let line_height = scanner.calculate_line_height_sapin(cur_box, Au(pt_size as i32));
+                         let percent_offset = line_height.scale_by(p / 100.0f);
+                         -(percent_offset + ascent)
+                     }

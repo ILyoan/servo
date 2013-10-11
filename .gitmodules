@@ -57,7 +57,7 @@
 	url = https://github.com/mozilla-servo/rust-netsurfcss.git
 [submodule "src/support/wapcaplet/rust-wapcaplet"]
 	path = src/support/wapcaplet/rust-wapcaplet
-	url = https://github.com/mozilla-servo/rust-wapcaplet.git
+	url = https://github.com/ss440/rust-wapcaplet.git
 [submodule "src/platform/macos/rust-core-graphics"]
 	path = src/platform/macos/rust-core-graphics
 	url = https://github.com/mozilla-servo/rust-core-graphics.git

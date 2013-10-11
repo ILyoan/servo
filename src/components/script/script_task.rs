@@ -14,7 +14,7 @@ use dom::element::Element;
 use dom::event::{Event_, ResizeEvent, ReflowEvent, ClickEvent, MouseDownEvent, MouseUpEvent};
 use dom::htmldocument::HTMLDocument;
 use dom::window::Window;
-use layout_interface::{AddStylesheetMsg, DocumentDamage};
+use layout_interface::{AddStylesheetMsg, DocumentDamage, AddCSSDataMsg};
 use layout_interface::{DocumentDamageLevel, HitTestQuery, HitTestResponse, LayoutQuery};
 use layout_interface::{LayoutChan, MatchSelectorsDocumentDamage, QueryMsg, Reflow};
 use layout_interface::{ReflowDocumentDamage, ReflowForDisplay, ReflowGoal};
@@ -25,11 +25,12 @@ use servo_msg::constellation_msg::{PipelineId, SubpageId};
 use servo_msg::constellation_msg::{LoadIframeUrlMsg, IFrameSandboxed, IFrameUnsandboxed};
 use servo_msg::constellation_msg;
 
+use std::cell::Cell;
 use std::comm;
 use std::comm::{Port, SharedChan};
 use std::io::read_whole_file;
 use std::ptr;
-use std::task::spawn_with;
+use std::task::{spawn_sched, SingleThreaded};
 use std::util::replace;
 use dom::window::TimerData;
 use geom::size::Size2D;
@@ -449,10 +450,14 @@ impl ScriptTask {
                                             resource_task: ResourceTask,
                                             image_cache_task: ImageCacheTask,
                                             initial_size: Future<Size2D<uint>>) {
-        do spawn_with((compositor, layout_chan, port, chan, constellation_chan,
-                       resource_task, image_cache_task, initial_size))
-            |(compositor, layout_chan, port, chan, constellation_chan,
-                       resource_task, image_cache_task, initial_size)| {
+        let parms = Cell::new((compositor, layout_chan, port, chan, constellation_chan,
+                               resource_task, image_cache_task, initial_size));
+        // Since SpiderMonkey is blocking it needs to run in its own thread.
+        // If we don't do this then we'll just end up with a bunch of SpiderMonkeys
+        // starving all the other tasks.
+        do spawn_sched(SingleThreaded) {
+            let (compositor, layout_chan, port, chan, constellation_chan,
+                 resource_task, image_cache_task, initial_size) = parms.take();
             let script_task = ScriptTask::new(id,
                 @compositor as @ScriptListener,
                 layout_chan,
@@ -624,7 +629,9 @@ impl ScriptTask {
         }
     }
 
-    fn handle_exit_window_msg(&mut self, _id: PipelineId) -> bool {
+    fn handle_exit_window_msg(&mut self, id: PipelineId) -> bool {
+        self.handle_exit_pipeline_msg(id);
+
         // TODO(tkuehn): currently there is only one window,
         // so this can afford to be naive and just shut down the
         // compositor. In the future it'll need to be smarter.
@@ -657,7 +664,7 @@ impl ScriptTask {
             // needs to be smarter about exiting pipelines.
             None => false,
         }
-        
+
     }
 
     /// The entry point to document loading. Defines bindings, sets up the window and document
@@ -726,7 +733,9 @@ impl ScriptTask {
                     js_scripts = Some(scripts);
                 }
                 Some(HtmlDiscoveredStyle(sheet)) => {
-                    page.layout_chan.send(AddStylesheetMsg(sheet));
+                    //printfln!("HtmlDiscoveredStyle: %?", sheet);
+                    //page.layout_chan.send(AddStylesheetMsg(sheet));
+                    page.layout_chan.send(AddCSSDataMsg(sheet));
                 }
                 Some(HtmlDiscoveredIFrame((iframe_url, subpage_id, size_future, sandboxed))) => {
                     page.next_subpage_id = SubpageId(*subpage_id + 1);

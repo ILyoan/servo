@@ -10,13 +10,26 @@ use text::glyph::GlyphStore;
 use font::{Font, FontDescriptor, RunMetrics};
 use servo_util::range::Range;
 use extra::arc::Arc;
-use newcss::values::CSSTextDecoration;
+//use newcss::values::CSSTextDecoration;
+
+////////////////////////////////////
+// FIXME
+#[deriving(Eq, Clone)]
+pub enum CSSTextDecoration {
+    CSSTextDecorationNone,
+    CSSTextDecorationUnderline,
+    CSSTextDecorationOverline,
+    CSSTextDecorationLineThrough,
+    CSSTextDecorationBlink
+}
+/////////////////////////////////////
 
 /// A text run.
 pub struct TextRun {
     text: ~str,
     font: @mut Font,
     decoration: CSSTextDecoration,
+    // decoration: ~str,
     glyphs: ~[Arc<GlyphStore>],
 }
 
@@ -25,6 +38,7 @@ pub struct SendableTextRun {
     text: ~str,
     font: FontDescriptor,
     decoration: CSSTextDecoration,
+    // decoration: ~str,
     priv glyphs: ~[Arc<GlyphStore>],
 }
 
@@ -39,6 +53,7 @@ impl SendableTextRun {
             text: self.text.clone(),
             font: font,
             decoration: self.decoration,
+            // decoration: self.decoration.clone(),
             glyphs: self.glyphs.clone(),
         }
     }
@@ -117,7 +132,8 @@ impl<'self> Iterator<Range> for LineIterator<'self> {
 }
 
 impl<'self> TextRun {
-    pub fn new(font: @mut Font, text: ~str, decoration: CSSTextDecoration) -> TextRun {
+   pub fn new(font: @mut Font, text: ~str, decoration: CSSTextDecoration) -> TextRun {
+       // pub fn new(font: @mut Font, text: ~str, decoration: ~str) -> TextRun {
         let glyphs = TextRun::break_and_shape(font, text);
 
         let run = TextRun {
@@ -193,6 +209,7 @@ impl<'self> TextRun {
             text: self.text.clone(),
             font: self.font.get_descriptor(),
             decoration: self.decoration,
+            // decoration: self.decoration.clone(),
             glyphs: self.glyphs.clone(),
         }
     }

@@ -19,9 +19,15 @@ pub enum StylesheetProvenance {
     InlineProvenance(Url, ~str),
 }
 
+pub struct CSSData {
+    sheet: Stylesheet,
+    data: Option<~str>
+}
+
 pub fn spawn_css_parser(provenance: StylesheetProvenance,
                         resource_task: ResourceTask)
-                     -> Port<Stylesheet> {
+//                     -> Port<Stylesheet> {
+                     -> Port<CSSData> {
     let (result_port, result_chan) = comm::stream();
 
     let provenance_cell = Cell::new(provenance);
@@ -33,24 +39,30 @@ pub fn spawn_css_parser(provenance: StylesheetProvenance,
             }
         };
 
-        let sheet = Stylesheet::new(url, data_stream(provenance_cell.take(),
-                                                     resource_task.clone()));
-        result_chan.send(sheet);
+        let (data_stream, cssdata) = data_stream(provenance_cell.take(), resource_task.clone());
+//        let sheet = Stylesheet::new(url, data_stream, cssdata);
+        let sheet = Stylesheet::new(url, data_stream);
+        let cssdata = CSSData {
+            sheet: sheet,
+            data: cssdata
+        };
+        result_chan.send(cssdata);
     }
 
     return result_port;
 }
 
-fn data_stream(provenance: StylesheetProvenance, resource_task: ResourceTask) -> DataStream {
+fn data_stream(provenance: StylesheetProvenance, resource_task: ResourceTask) -> (DataStream, Option<~str>) {
     match provenance {
         UrlProvenance(url) => {
-            debug!("cssparse: loading style sheet at %s", url.to_str());
+            //printfln!("cssparse: UrlProvenance(loading stylesheet): %s", url.to_str());
             let (input_port, input_chan) = comm::stream();
             resource_task.send(Load(url, input_chan));
-            resource_port_to_data_stream(input_port)
+            (resource_port_to_data_stream(input_port), None)
         }
         InlineProvenance(_, data) => {
-            data_to_data_stream(data)
+            //printfln!("cssparse: InlineProvenance(loading stylesheet): %s", data.clone());
+            (data_to_data_stream(data.to_owned()), Some(data.to_owned()))
         }
     }
 }

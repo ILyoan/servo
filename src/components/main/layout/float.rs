@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#[allow(unused_variable)];
+
 use layout::box::{RenderBox};
 use layout::context::LayoutContext;
 use layout::display_list_builder::{DisplayListBuilder, ExtraDisplayListData};
@@ -83,8 +85,14 @@ impl FloatFlowData {
 
         self.box.map(|&box| {
             let style = box.style();
+            let style_sapin = box.style_sapin();
+
+            // do box.with_model |model| {
+                // model.compute_borders(style)
+            // }
+
             do box.with_model |model| {
-                model.compute_borders(style)
+                model.compute_borders_sapin(style_sapin)
             }
 
             min_width = min_width.add(&box.get_min_width(ctx));
@@ -95,24 +103,29 @@ impl FloatFlowData {
         self.common.pref_width = pref_width;
     }
 
-    pub fn assign_widths_float(&mut self) { 
+    pub fn assign_widths_float(&mut self) {
         debug!("assign_widths_float: assigning width for flow %?",  self.common.id);
         // position.size.width is set by parent even though we don't know
         // position.origin yet.
         let mut remaining_width = self.common.position.size.width;
         self.containing_width = remaining_width;
         let mut x_offset = Au(0);
-        
+
         // Parent usually sets this, but floats are never inorder
         self.common.is_inorder = false;
 
         for &box in self.box.iter() {
-            let style = box.style();
+            // let style = box.style();
+            let style_sapin = box.style_sapin();
+
             do box.with_model |model| {
                 // Can compute padding here since we know containing block width.
-                model.compute_padding(style, remaining_width);
+                // model.compute_padding(style, remaining_width);
+
+                model.compute_padding_sapin(style_sapin, remaining_width);
 
                 // Margins for floats are 0 if auto.
+                /*
                 let margin_top = MaybeAuto::from_margin(style.margin_top(),
                                                         remaining_width,
                                                         style.font_size()).specified_or_zero();
@@ -125,17 +138,32 @@ impl FloatFlowData {
                 let margin_right = MaybeAuto::from_margin(style.margin_right(),
                                                           remaining_width,
                                                           style.font_size()).specified_or_zero();
+                */
 
+                let margin_top = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_top,
+                                                              remaining_width,
+                                                              style_sapin.Font.font_size).specified_or_zero();
+                let margin_bottom = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_bottom,
+                                                                 remaining_width,
+                                                                 style_sapin.Font.font_size).specified_or_zero();
+                let margin_left = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_left,
+                                                               remaining_width,
+                                                               style_sapin.Font.font_size).specified_or_zero();
+                let margin_right = MaybeAuto::from_margin_sapin(style_sapin.Margin.margin_right,
+                                                                remaining_width,
+                                                                style_sapin.Font.font_size).specified_or_zero();
 
-
-                let shrink_to_fit = geometry::min(self.common.pref_width, 
-                                                  geometry::max(self.common.min_width, 
+                let shrink_to_fit = geometry::min(self.common.pref_width,
+                                                  geometry::max(self.common.min_width,
                                                                 remaining_width));
 
 
-                let width = MaybeAuto::from_width(style.width(), 
+                // let width = MaybeAuto::from_width(style.width(),
+                                                  // remaining_width,
+                                                  // style.font_size()).specified_or_default(shrink_to_fit);
+                let width = MaybeAuto::from_width_sapin(style_sapin.Box.width,
                                                   remaining_width,
-                                                  style.font_size()).specified_or_default(shrink_to_fit);
+                                                  style_sapin.Font.font_size).specified_or_default(shrink_to_fit);
                 debug!("assign_widths_float -- width: %?", width);
 
                 model.margin.top = margin_top;
@@ -271,13 +299,17 @@ impl FloatFlowData {
             }
         });
 
-        
+
         //TODO(eatkinson): compute heights properly using the 'height' property.
         for &box in self.box.iter() {
-            let height_prop = 
-                MaybeAuto::from_height(box.style().height(),
-                                       Au(0),
-                                       box.style().font_size()).specified_or_zero();
+            // let height_prop =
+                // MaybeAuto::from_height(box.style().height(),
+                                       // Au(0),
+                                       // box.style().font_size()).specified_or_zero();
+            let height_prop =
+                MaybeAuto::from_height_sapin(box.style_sapin().Box.height,
+                                             Au(0),
+                                             box.style_sapin().Font.font_size).specified_or_zero();
 
             height = geometry::max(height, height_prop) + noncontent_height;
             debug!("assign_height_float -- height: %?", height);
@@ -289,8 +321,8 @@ impl FloatFlowData {
 
     pub fn build_display_list_float<E:ExtraDisplayListData>(&mut self,
                                                             builder: &DisplayListBuilder,
-                                                            dirty: &Rect<Au>, 
-                                                            list: &Cell<DisplayList<E>>) 
+                                                            dirty: &Rect<Au>,
+                                                            list: &Cell<DisplayList<E>>)
                                                             -> bool {
 
         //TODO: implement iframe size messaging

@@ -6,7 +6,7 @@
 /// rendered.
 
 use css::matching::MatchMethods;
-use css::select::new_css_select_ctx;
+use css::select::{new_css_select_ctx, html4_default_style_str_tmp};
 use layout::aux::LayoutAuxMethods;
 use layout::box_builder::LayoutTreeBuilder;
 use layout::context::LayoutContext;
@@ -31,8 +31,7 @@ use newcss::select::SelectCtx;
 use newcss::stylesheet::Stylesheet;
 use newcss::types::OriginAuthor;
 use script::dom::event::ReflowEvent;
-use script::dom::node::{AbstractNode, LayoutView};
-use script::layout_interface::{AddStylesheetMsg, ContentBoxQuery};
+use script::layout_interface::{AddStylesheetMsg, ContentBoxQuery, AddCSSDataMsg};
 use script::layout_interface::{HitTestQuery, ContentBoxResponse, HitTestResponse};
 use script::layout_interface::{ContentBoxesQuery, ContentBoxesResponse, ExitMsg, LayoutQuery};
 use script::layout_interface::{MatchSelectorsDocumentDamage, Msg};
@@ -47,6 +46,13 @@ use servo_util::time::{ProfilerChan, profile};
 use servo_util::time;
 use servo_util::range::Range;
 use extra::url::Url;
+
+//use script::style::selector_matching::{Stylist, AuthorOrigin};
+
+use script::dom::node::{AbstractNode, LayoutView/*, ScriptView*/};
+use script::style::selector_matching::*;
+use extra::time::precise_time_ns;
+use script::html::cssparse::CSSData;
 
 struct LayoutTask {
     id: PipelineId,
@@ -64,6 +70,7 @@ struct LayoutTask {
 
     css_select_ctx: @mut SelectCtx,
     profiler_chan: ProfilerChan,
+    css_data: ~str
 }
 
 impl LayoutTask {
@@ -91,7 +98,8 @@ impl LayoutTask {
                                              render_chan.take(),
                                              img_cache_task.take(),
                                              &opts,
-                                             profiler_chan.take());
+                                             profiler_chan.take(),
+                                             ~"");
             layout.start();
         };
     }
@@ -100,10 +108,11 @@ impl LayoutTask {
            port: Port<Msg>,
            constellation_chan: ConstellationChan,
            script_chan: ScriptChan,
-           render_chan: RenderChan<AbstractNode<()>>, 
+           render_chan: RenderChan<AbstractNode<()>>,
            image_cache_task: ImageCacheTask,
            opts: &Opts,
-           profiler_chan: ProfilerChan)
+           profiler_chan: ProfilerChan,
+           css_data: ~str)
            -> LayoutTask {
         let fctx = @mut FontContext::new(opts.render_backend, true, profiler_chan.clone());
 
@@ -120,9 +129,10 @@ impl LayoutTask {
             screen_size: None,
 
             display_list: None,
-            
+
             css_select_ctx: @mut new_css_select_ctx(),
             profiler_chan: profiler_chan,
+            css_data: css_data
         }
     }
 
@@ -147,7 +157,12 @@ impl LayoutTask {
 
     fn handle_request(&mut self) -> bool {
         match self.port.recv() {
-            AddStylesheetMsg(sheet) => self.handle_add_stylesheet(sheet),
+            AddCSSDataMsg(sheet) => {
+                self.handle_add_stylesheet2(sheet)
+            },
+            AddStylesheetMsg(sheet) => {
+                self.handle_add_stylesheet(sheet)
+            },
             ReflowMsg(data) => {
                 let data = Cell::new(data);
 
@@ -173,9 +188,29 @@ impl LayoutTask {
         true
     }
 
-    fn handle_add_stylesheet(&self, sheet: Stylesheet) {
-        let sheet = Cell::new(sheet);
-        self.css_select_ctx.append_sheet(sheet.take(), OriginAuthor);
+    fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
+        //error!("handle_add_stylesheet");
+        self.css_select_ctx.append_sheet(sheet, OriginAuthor);
+    }
+
+    fn handle_add_stylesheet2(&mut self, sheet: CSSData) {
+        error!("handle_add_stylesheet2");
+        match sheet.data {
+            Some(ref css_data) => {
+                if self.css_data.len() == 0 {
+                    error!("1css_data: %?", css_data);
+                    error!("1self.css_data: %?",self.css_data);
+                    self.css_data = css_data.to_owned()
+                } else if (self.css_data != *css_data) && (css_data.len() > 0) {
+                    error!("2css_data: %?", css_data.clone());
+                    error!("2self.css_data: %?",self.css_data);
+                    self.css_data = css_data.to_owned();
+                }
+
+            }
+            None => {}
+        }
+        self.css_select_ctx.append_sheet(sheet.sheet, OriginAuthor);
     }
 
     /// The high-level routine that performs layout tasks.
@@ -196,7 +231,7 @@ impl LayoutTask {
         // Reset the image cache.
         self.local_image_cache.next_round(self.make_on_image_available_cb(script_chan));
 
-        self.doc_url = Some(doc_url);
+//        self.doc_url = Some(doc_url.clone());
         let screen_size = Size2D(Au::from_px(data.window_size.width as int),
                                  Au::from_px(data.window_size.height as int));
         let resized = self.screen_size != Some(screen_size);
@@ -218,8 +253,24 @@ impl LayoutTask {
             ReflowDocumentDamage => {}
             MatchSelectorsDocumentDamage => {
                 do profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone()) {
+                    let s = precise_time_ns();
                     node.restyle_subtree(self.css_select_ctx);
+                    let e = precise_time_ns();
+                    let ms = ((e - s) as float / 1000000f);
+                    error!("1. netsurfcss css selector matching : %? ms", ms);
                 }
+
+                let mut style = Stylist::new();
+                error!("css data: %?", self.css_data);
+                style.add_stylesheet(html4_default_style_str_tmp(), UserAgentOrigin);
+                style.add_stylesheet(self.css_data, AuthorOrigin);
+
+                error!("style: %?", style);
+                let s = precise_time_ns();
+                style.get_computed_style(*node, None, None);
+                let e = precise_time_ns();
+                let ms = ((e - s) as float / 1000000f);
+                error!("2. simon`s css selector matching    : %? ms", ms);
             }
         }
 
@@ -282,8 +333,12 @@ impl LayoutTask {
                 true
             };
 
+            debug!("after bubble_widths: constructed Flow tree");
+            debug!("%?", layout_root.dump());
+
+
             // FIXME: We want to do
-            //     for flow in layout_root.traverse_preorder_prune(|f| f.restyle_damage().lacks(Reflow)) 
+            //     for flow in layout_root.traverse_preorder_prune(|f| f.restyle_damage().lacks(Reflow))
             // but FloatContext values can't be reused, so we need to recompute them every time.
             // NOTE: this currently computes borders, so any pruning should separate that operation out.
             debug!("assigning widths");
@@ -292,6 +347,10 @@ impl LayoutTask {
                 true
             };
 
+            debug!("after assign_widths: constructed Flow tree");
+            debug!("%?", layout_root.dump());
+
+
             // For now, this is an inorder traversal
             // FIXME: prune this traversal as well
             debug!("assigning height");
@@ -299,6 +358,10 @@ impl LayoutTask {
                 flow.assign_height(&mut layout_ctx);
                 true
             };
+
+            debug!("after assign_height: constructed Flow tree");
+            debug!("%?", layout_root.dump());
+
         }
 
         // Build the display list if necessary, and send it to the renderer.
@@ -313,8 +376,8 @@ impl LayoutTask {
                 // TODO: Set options on the builder before building.
                 // TODO: Be smarter about what needs painting.
                 let root_pos = &layout_root.position().clone();
-                layout_root.each_preorder_prune(|flow| {  
-                    flow.build_display_list(&builder, root_pos, display_list) 
+                layout_root.each_preorder_prune(|flow| {
+                    flow.build_display_list(&builder, root_pos, display_list)
                 }, |_| { true } );
 
                 let root_size = do layout_root.with_base |base| {

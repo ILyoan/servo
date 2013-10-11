@@ -28,7 +28,8 @@ use servo_util::time;
 use servo_util::time::profile;
 use servo_util::time::ProfilerChan;
 
-use newcss::values::CSSTextDecoration;
+// use newcss::values::CSSTextDecoration;
+use text::text_run::CSSTextDecoration;
 
 // FontHandle encapsulates access to the platform's font API,
 // e.g. quartz, FreeType. It provides access to metrics and tables
@@ -196,6 +197,7 @@ impl FontGroup {
     }
 
     pub fn create_textrun(&self, text: ~str, decoration: CSSTextDecoration) -> TextRun {
+    // pub fn create_textrun(&self, text: ~str, decoration: ~str) -> TextRun {
         assert!(self.fonts.len() > 0);
 
         // TODO(Issue #177): Actually fall back through the FontGroup when a font is unsuitable.
@@ -222,7 +224,7 @@ impl RunMetrics {
         // ascent+descent and advance is sometimes too generous and
         // looking at actual glyph extents can yield a tighter box.
 
-        RunMetrics { 
+        RunMetrics {
             advance_width: advance,
             bounding_box: bounds,
             ascent: ascent,
@@ -260,7 +262,7 @@ impl Font {
         } else {
             return Err(handle.unwrap_err());
         };
-        
+
         let metrics = handle.get_metrics();
         // TODO(Issue #179): convert between specified and used font style here?
 
@@ -421,7 +423,7 @@ impl Font {
 
         let glyphbuf = struct__AzGlyphBuffer {
             mGlyphs: vec::raw::to_ptr(azglyphs),
-            mNumGlyphs: azglyph_buf_len as uint32_t            
+            mNumGlyphs: azglyph_buf_len as uint32_t
         };
 
         unsafe {
@@ -459,14 +461,14 @@ impl Font {
     }
 
     pub fn shape_text(@mut self, text: ~str, is_whitespace: bool) -> Arc<GlyphStore> {
-        do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
+        //do profile(time::LayoutShapingCategory, self.profiler_chan.clone()) {
             let shaper = self.get_shaper();
             do self.shape_cache.find_or_create(&text) |txt| {
                 let mut glyphs = GlyphStore::new(text.char_len(), is_whitespace);
                 shaper.shape_text(*txt, &mut glyphs);
                 Arc::new(glyphs)
             }
-        }
+       // }
     }
 
     pub fn get_descriptor(&self) -> FontDescriptor {
@@ -478,12 +480,12 @@ impl Font {
     }
 
     pub fn glyph_h_advance(&mut self, glyph: GlyphIndex) -> FractionalPixel {
-	do self.glyph_advance_cache.find_or_create(&glyph) |glyph| {
-	    match self.handle.glyph_h_advance(*glyph) {
-	        Some(adv) => adv,
-		None => /* FIXME: Need fallback strategy */ 10f as FractionalPixel
-	    }
-	}
+        do self.glyph_advance_cache.find_or_create(&glyph) |glyph| {
+            match self.handle.glyph_h_advance(*glyph) {
+                Some(adv) => adv,
+                None => /* FIXME: Need fallback strategy */ 10f as FractionalPixel
+            }
+        }
     }
 }
 

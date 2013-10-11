@@ -387,7 +387,7 @@ impl<'self> FlowContext {
     pub fn assign_height_inorder(&mut self, ctx: &mut LayoutContext) {
         match *self {
             BlockFlow(ref mut info)  => info.assign_height_inorder_block(ctx),
-            InlineFlow(ref mut info) => info.assign_height_inorder_inline(ctx),
+            InlineFlow(ref mut info) => info.assign_height_inorder_inline_sapin(ctx),
             FloatFlow(ref mut info)  => info.assign_height_inorder_float(),
             _ => fail!(fmt!("Tried to assign_height of flow: f%d", self.id()))
         }
