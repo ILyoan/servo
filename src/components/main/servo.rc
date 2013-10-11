@@ -58,7 +58,9 @@ use std::comm;
 #[cfg(not(test))]
 use std::os;
 use std::rt::rtio::RtioTimer;
+use std::task;
 use std::task::spawn_with;
+use std::task::{spawn_sched, SingleThreaded};
 
 #[path="compositing/mod.rs"]
 pub mod compositing;
@@ -104,27 +106,9 @@ pub mod platform;
 pub mod util;
 
 #[cfg(not(test))]
-#[start]
-fn start(argc: int, argv: **u8, crate_map: *u8) -> int {
-    #[cfg(target_os="linux")]
-    #[cfg(target_os="macos")]
-    fn getopts() -> Opts {
-        opts::from_cmdline_args(os::args())
-    }
-    #[cfg(target_os="android")]
-    fn getopts() -> Opts {
-        let mut args:~[~str] = ~[];
-        args.push(~"servo");
-        let servo_url = os::getenv(~"SERVO_URL");
-        match servo_url {
-            Some(s) => { args.push(s); },
-            None => { fail!("No url input"); }
-        }
-        opts::from_cmdline_args(args)
-    }
-    do std::rt::start_on_main_thread(argc, argv, crate_map) {
-        run(getopts())
-    }
+#[main]
+fn main() {
+    run(opts::from_cmdline_args(os::args()));
 }
 
 fn run(opts: Opts) {
@@ -162,12 +146,16 @@ fn run(opts: Opts) {
         exit_response_from_constellation.recv();
     }
 
-
-    let compositor_task = CompositorTask::new(opts,
-                                              compositor_port,
-                                              profiler_chan,
-                                              shutdown_chan);
-    debug!("preparing to enter main loop");
-    compositor_task.run();
+    let mut task = task::task();
+    task.sched_mode(SingleThreaded);
+    do task.spawn_with((opts, compositor_port, profiler_chan, shutdown_chan))
+            |(opts, compositor_port, profiler_chan, shutdown_chan)| {
+        let compositor_task = CompositorTask::new(opts,
+                                                  compositor_port,
+                                                  profiler_chan,
+                                                  shutdown_chan);
+        debug!("preparing to enter main loop");
+        compositor_task.run();
+    }
 }
 
