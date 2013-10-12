@@ -100,14 +100,44 @@ impl Stylist {
                     }
                 }
             };
-        );
+        );     
+
+        macro_rules! append_lnline_rule(
+            ($priority: ident) => {
+                if style_rule.declarations.$priority.len() > 0 {
+                    for selector in style_rule.selectors.iter() {
+                        inline_rules.$priority.push(Rule {
+                            selector: *selector,
+                            declarations: style_rule.declarations.$priority,
+                        })
+                    }
+                }
+            };
+        )
+
+        let mut inline_rules = PerOriginRules::new();
+        do element.with_imm_element |elem| {
+            match elem.style_string {
+                Some(ref css_source) => {
+                    let css_source = "* { " + *css_source + " }";
+                    let stylesheet = parse_stylesheet(css_source);
+                    let device = &Device { media_type: Screen };
+                    for style_rule in stylesheet.iter_style_rules(device) {
+                        append_lnline_rule!(normal);
+                        append_lnline_rule!(important);
+                    }
+                }
+                None => {}
+            }
+        }
 
         // In cascading order
         append!(self.ua_rules.normal);
         append!(self.user_rules.normal);
         append!(self.author_rules.normal);
-        // TODO add style attribute
+        append!(inline_rules.normal);
         append!(self.author_rules.important);
+        append!(inline_rules.important);
         append!(self.user_rules.important);
         append!(self.ua_rules.important);
 
