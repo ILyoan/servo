@@ -169,6 +169,7 @@ impl LineboxScanner {
         self.cur_y = self.pending_line.bounds.origin.y + self.pending_line.bounds.size.height;
         self.reset_linebox();
     }
+
 /*
     fn calculate_line_height(&self, box: RenderBox, font_size: Au) -> Au {
         match box.line_height() {
@@ -180,18 +181,12 @@ impl LineboxScanner {
         }
     }
 */
-    // ymin
+
     fn calculate_line_height_sapin(&self, box: RenderBox, font_size: Au) -> Au {
         match box.line_height_sapin() {
-            //line_height::Normal => font_size.scale_by(1.14f),
-            line_height::Normal => font_size,
-            line_height::Length(length) => {
-                match length {
-                    computed::Length(length) => Au(length as i32),
-                }
-            },
-            //line_height::Number(number) => font_size.scale_by(number as float),
-            line_height::Number(number) => Au(number as i32),
+            line_height::Normal => font_size.scale_by(1.14),
+            line_height::Length(computed::Length(length)) => Au(length as i32),
+            line_height::Number(number) => font_size.scale_by(number as float),
         }
     }
 
