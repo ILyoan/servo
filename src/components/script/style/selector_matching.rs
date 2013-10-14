@@ -17,6 +17,7 @@ use std::cast;
 use std::comm;
 use std::vec;
 use std::task;
+use std::rt::util::default_sched_threads;
 use wapcaplet::LwcString;
 use lwcstr_from_rust_str = wapcaplet::from_rust_string;
 use servo_util::tree::TreeNodeRef;
@@ -324,7 +325,7 @@ impl StyleMethod for AbstractNode<LayoutView> {
     }
 
     fn match_subtree_task(&self, stylist: &Stylist) {
-        let num_task = 8;
+        let num_task = default_sched_threads();
         let mut count = 0;
         let mut node_per_task = vec::from_elem(num_task, ~[]);
         for node in self.traverse_preorder() {
