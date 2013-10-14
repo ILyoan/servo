@@ -30,6 +30,7 @@ pub struct Element {
     interned_classes: ~[LwcString],
     attrs: ~[Attr],
     style_attribute: Option<Stylesheet>,
+    style_string: Option<~str>
 }
 
 impl CacheableWrapper for Element {
@@ -131,6 +132,7 @@ impl<'self> Element {
             interned_classes: ~[],
             attrs: ~[],
             style_attribute: None,
+            style_string: None,
         }
     }
 
@@ -182,6 +184,7 @@ impl<'self> Element {
                 Stylesheet::from_attribute(
                     FromStr::from_str("http://www.example.com/").unwrap(),
                     null_str_as_empty_ref(raw_value)));
+            self.style_string = raw_value.clone();
         }
 
         //XXXjdm We really need something like a vtable so we can call AfterSetAttr.
