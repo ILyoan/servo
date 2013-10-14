@@ -31,12 +31,13 @@ use newcss;
 use newcss::complete::CompleteStyle;
 //use newcss::units::{Em, Px};
 //use newcss::units::{Cursive, Fantasy, Monospace, SansSerif, Serif};
-use newcss::values::{CSSBorderStyleDashed, CSSBorderStyleSolid};
-use newcss::values::{CSSClearNone, CSSClearLeft, CSSClearRight, CSSClearBoth};
+use newcss::values::{CSSBorderStyleDashed /*, CSSBorderStyleSolid*/};
+// use newcss::values::{CSSClearNone, CSSClearLeft, CSSClearRight, CSSClearBoth};
 //use newcss::values::{CSSFontFamilyFamilyName, CSSFontFamilyGenericFamily};
 //use newcss::values::{CSSFontSizeLength, CSSFontStyleItalic, CSSFontStyleNormal};
 //use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSLineHeight, CSSVerticalAlign};
 use newcss::values::{CSSVerticalAlign};
+use newcss::values::{CSSBorderStyle, CSSBorderStyleNone, CSSBorderStyleSolid, CSSBorderStyleHidden};
 // use newcss::values::{CSSFloatNone, CSSPositionStatic};
 // use newcss::values::{CSSDisplayInlineBlock, CSSDisplayInlineTable};
 use script::dom::node::{AbstractNode, LayoutView};
@@ -46,12 +47,12 @@ use servo_util::range::*;
 use extra::url::Url;
 use script::style::properties::common_types::computed;
 use script::style::properties::ComputedValues;
-use script::style::properties::longhands::{clear, font_family, font_style, vertical_align};
+use script::style::properties::longhands::{clear, font_family, font_style, vertical_align, border_top_style};
 use script::style::properties::longhands::{line_height, text_align/*, text_decoration*/};
 //use script::style::properties::longhands::{border_top_color, border_right_color, border_bottom_color, border_left_color, border_top_style, border_right_style, border_bottom_style, border_left_style};
 use script::style::properties::longhands::{display, position, float};
 use cssparser::*;
-use gfx::geometry;
+// use gfx::geometry;
 
 /// Render boxes (`struct RenderBox`) are the leaves of the layout tree. They cannot position
 /// themselves. In general, render boxes do not have a simple correspondence with CSS boxes as in
@@ -451,7 +452,7 @@ impl RenderBox {
     /// Returns the *preferred width* of this render box as defined by the CSS specification.
     pub fn get_pref_width(&self, _: &LayoutContext) -> Au {
         //self.guess_width() + match *self {
-        self.guess_width_sapin() + match *self {            
+        self.guess_width_sapin() + match *self {
             // TODO: This should account for the preferred width of the box element in isolation.
             // That includes borders, margins, and padding, but not child widths. The block
             // `FlowContext` will combine the width of this element and that of its children to
@@ -834,6 +835,7 @@ impl RenderBox {
 
     pub fn clear(&self) -> Option<ClearType> {
         // Replaced by sonwow
+        /*
         let style = self.style();
         match style.clear() {
             CSSClearNone => None,
@@ -841,6 +843,7 @@ impl RenderBox {
             CSSClearRight => Some(ClearRight),
             CSSClearBoth => Some(ClearBoth)
         };
+        */
 
         let style = self.style_sapin();
         match style.Box.clear {
@@ -873,7 +876,7 @@ impl RenderBox {
                 computed::Length(length) => length as float
             };
 
-            let font_size = font_size/60.0;            
+            let font_size = font_size/60.0;
             debug!("(font style) font size: `%?px`", font_size);
 
             let (italic, oblique) = match my_style_sapin.Font.font_style {
@@ -1056,10 +1059,10 @@ impl RenderBox {
         if border.is_zero() {
             return
         }
-        let (top_color, right_color, bottom_color, left_color) = (self.style().border_top_color(), self.style().border_right_color(), self.style().border_bottom_color(), self.style().border_left_color());
-        let (top_style, right_style, bottom_style, left_style) = (self.style().border_top_style(), self.style().border_right_style(), self.style().border_bottom_style(), self.style().border_left_style());
-        //let (top_color, right_color, bottom_color, left_color) = (color_exchange1(self.style_sapin().Border.border_top_color), color_exchange1(self.style_sapin().Border.border_right_color), color_exchange1(self.style_sapin().Border.border_bottom_color), color_exchange1(self.style_sapin().Border.border_left_color));
-        //let (top_style, right_style, bottom_style, left_style) = (self.style_sapin().Border.border_top_style, self.style_sapin().Border.border_right_style, self.style_sapin().Border.border_bottom_style, self.style_sapin().Border.border_left_style);
+        //let (top_color, right_color, bottom_color, left_color) = (self.style().border_top_color(), self.style().border_right_color(), self.style().border_bottom_color(), self.style().border_left_color());
+        //let (top_style, right_style, bottom_style, left_style) = (self.style().border_top_style(), self.style().border_right_style(), self.style().border_bottom_style(), self.style().border_left_style());
+        let (top_color, right_color, bottom_color, left_color) = (color_exchange1(self.style_sapin().Border.border_top_color), color_exchange1(self.style_sapin().Border.border_right_color), color_exchange1(self.style_sapin().Border.border_bottom_color), color_exchange1(self.style_sapin().Border.border_left_color));
+        let (top_style, right_style, bottom_style, left_style) = (self.style_sapin().Border.border_top_style, self.style_sapin().Border.border_right_style, self.style_sapin().Border.border_bottom_style, self.style_sapin().Border.border_left_style);
 
 	// Append the border to the display list.
         do list.with_mut_ref |list| {
@@ -1076,10 +1079,13 @@ impl RenderBox {
                                           right_color.to_gfx_color(),
                                           bottom_color.to_gfx_color(),
                                           left_color.to_gfx_color()),
-                style: SideOffsets2D::new(top_style,
-                                          right_style,
-                                          bottom_style,
-                                          left_style)
+
+                // FIXME: converting script::style::properties::longhands::border_top_style to newcss::values::CSSBorderStyle
+                // as script is not accessable from gfx
+                style: SideOffsets2D::new(to_border_style(top_style),
+                                          to_border_style(right_style),
+                                          to_border_style(bottom_style),
+                                          to_border_style(left_style))
             };
 
             list.append_item(BorderDisplayItemClass(border_display_item))
@@ -1104,4 +1110,13 @@ fn color_exchange1(input: Color) -> newcss::color::Color {
 fn color_exchange2(input: RGBA) -> newcss::color::Color {
     let output = newcss::color::Color { red: (input.red * 255.0) as u8, green: (input.green * 255.0) as u8, blue: (input.blue * 255.0) as u8, alpha: input.alpha as float };
     output
+}
+
+
+fn to_border_style(style: border_top_style::ComputedValue) ->  CSSBorderStyle {
+    match style {
+        border_top_style::none => CSSBorderStyleNone,
+        border_top_style::solid => CSSBorderStyleSolid,
+        border_top_style::hidden => CSSBorderStyleHidden,
+    }
 }
