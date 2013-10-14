@@ -251,7 +251,7 @@ impl LayoutTask {
                     // error!("1. netsurfcss css selector matching : %? ms", ms);
 
                     let s = precise_time_ns();
-                    node.match_subtree(&self.stylist);
+                    node.match_subtree_task(&self.stylist);
                     node.cascade_subtree(None);
                     let e = precise_time_ns();
                     let ms = ((e - s) as float / 1000000f);

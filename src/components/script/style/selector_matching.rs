@@ -359,10 +359,8 @@ impl StyleMethod for AbstractNode<LayoutView> {
                 num_spawn += 1;
             }
         }
-        for i in range(0, num_spawn) {
-            let count = port.recv();
-            printfln!("A match task finished(%?/%?): %? nodes takes %?ms",
-                i + 1, num_spawn, count, (precise_time_ns() - s) as float / 1000000f);
+        for _ in range(0, num_spawn) {
+            port.recv();
         }
     }
 
