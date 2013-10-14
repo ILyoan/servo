@@ -8,13 +8,19 @@ use extra::sort::tim_sort;
 use style::selectors::*;
 use style::stylesheets::parse_stylesheet;
 use style::media_queries::{Device, Screen};
-use style::properties::{ComputedValues, cascade, PropertyDeclaration};
+use style::properties::{ComputedValues, cascade, PropertyDeclaration, get_initial_values};
 use dom::node::{AbstractNode, LayoutView};
 use dom::element::Element;
 
 use std::cell::Cell;
+use std::cast;
+use std::comm;
+use std::vec;
+use std::task;
 use wapcaplet::LwcString;
 use lwcstr_from_rust_str = wapcaplet::from_rust_string;
+use servo_util::tree::TreeNodeRef;
+use extra::time::precise_time_ns;
 
 pub enum StylesheetOrigin {
     UserAgentOrigin,
@@ -253,6 +259,9 @@ fn match_attribute(attr: &AttrSelector, element: &Element, f: &fn(&str)-> bool) 
 pub trait StyleMethod {
     fn match_subtree(&self, stylist: &Stylist);
     fn cascade_subtree(&self, parent: Option<AbstractNode<LayoutView>>);
+
+    fn match_subtree_task(&self, stylist: &Stylist);
+    fn cascade_subtree_task(&self, parent: Option<AbstractNode<LayoutView>>);
 }
 
 impl StyleMethod for AbstractNode<LayoutView> {
@@ -281,6 +290,92 @@ impl StyleMethod for AbstractNode<LayoutView> {
             if kid.is_element() {
                 kid.cascade_subtree(Some(*self));
             }
+        }
+    }
+
+    fn match_subtree_task(&self, stylist: &Stylist) {
+        let num_task = 8;
+        let mut count = 0;
+        let mut node_per_task = vec::from_elem(num_task, ~[]);
+        for node in self.traverse_preorder() {
+            if node.is_element() {
+                node_per_task[count % num_task].push(node);
+                count += 1;
+            }
+        }
+
+        let (port, chan) = comm::stream();
+        let chan = comm::SharedChan::new(chan);
+        let mut num_spawn = 0;
+        let this = *self;
+        let stylist: *Stylist = unsafe { cast::transmute(stylist) };
+
+        let s = precise_time_ns();
+        for nodes in node_per_task.move_iter() {
+            if nodes.len() > 0 {
+                let chan = chan.clone();
+                let mut task = task::task();
+                task.sched_mode(task::SingleThreaded);
+                do task.spawn_with(nodes) |nodes| {
+                    let mut count = 0;
+                    let stylist: &Stylist = unsafe { cast::transmute(stylist) };
+                    for node in nodes.move_iter() {
+                        stylist.match_style(node);
+                        count += 1;
+                    }
+                    chan.send(count);
+                }
+                num_spawn += 1;
+            }
+        }
+        for i in range(0, num_spawn) {
+            let count = port.recv();
+            printfln!("A match task finished(%?/%?): %? nodes takes %?ms",
+                i + 1, num_spawn, count, (precise_time_ns() - s) as float / 1000000f);
+        }
+    }
+
+    fn cascade_subtree_task(&self, parent: Option<AbstractNode<LayoutView>>) {
+        let computed_values = do self.read_layout_data |data| {
+            match parent {
+                Some(p) => p.read_layout_data(|pdata| cascade(data.applicable_declarations, pdata.style_sapin.map(|v| v))),
+                None => cascade(data.applicable_declarations, None)
+            }
+        };
+
+        let cell = Cell::new(computed_values);
+        self.write_layout_data(|data| data.style_sapin = Some(cell.take()));
+
+        let num_task = 2;
+        let mut count = 0;
+        let mut kids_per_task = vec::from_elem(num_task, ~[]);
+        for kid in self.children() {
+            if kid.is_element() {
+                kids_per_task[count % num_task].push(kid);
+                count += 1;
+            }
+        }
+
+        let (port, chan) = comm::stream();
+        let chan = comm::SharedChan::new(chan);
+
+        let mut num_spawn = 0;
+        let this = *self;
+        for kids in kids_per_task.move_iter() {
+            if kids.len() > 0 {
+                let chan = chan.clone();
+                do task::spawn_with(kids) |kids| {
+                    for kid in kids.move_iter() {
+                        kid.cascade_subtree_task(Some(this));
+                    }
+                    chan.send(());
+                }
+                num_spawn += 1;
+            }
+        }
+        
+        for _ in range(0, num_spawn) {
+            port.recv();
         }
     }
 }

@@ -872,7 +872,7 @@ pub struct ComputedValues {
 }
 
 #[inline]
-fn get_initial_values() -> ComputedValues {
+pub fn get_initial_values() -> ComputedValues {
     ComputedValues {
         % for style_struct, longhands in LONGHANDS_PER_STYLE_STRUCT:
             ${style_struct}: style_structs::${style_struct} {
