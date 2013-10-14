@@ -111,7 +111,6 @@ pub struct BorderDisplayItem<E> {
 
     /// The border styles.
     style: SideOffsets2D<CSSBorderStyle>
-    // style: SideOffsets2D<border_top_style::SpecifiedValue>
 }
 
 impl<E> DisplayItem<E> {

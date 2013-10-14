@@ -84,13 +84,7 @@ impl FloatFlowData {
 
 
         self.box.map(|&box| {
-            //let style = box.style();
             let style_sapin = box.style_sapin();
-
-            // do box.with_model |model| {
-                // model.compute_borders(style)
-            // }
-
             do box.with_model |model| {
                 model.compute_borders_sapin(style_sapin)
             }

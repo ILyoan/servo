@@ -31,8 +31,7 @@ use newcss;
 use newcss::complete::CompleteStyle;
 //use newcss::units::{Em, Px};
 //use newcss::units::{Cursive, Fantasy, Monospace, SansSerif, Serif};
-use newcss::values::{CSSBorderStyleDashed /*, CSSBorderStyleSolid*/};
-// use newcss::values::{CSSClearNone, CSSClearLeft, CSSClearRight, CSSClearBoth};
+use newcss::values::{CSSBorderStyleDashed};
 //use newcss::values::{CSSFontFamilyFamilyName, CSSFontFamilyGenericFamily};
 //use newcss::values::{CSSFontSizeLength, CSSFontStyleItalic, CSSFontStyleNormal};
 //use newcss::values::{CSSFontStyleOblique, CSSTextAlign, CSSLineHeight, CSSVerticalAlign};
@@ -835,16 +834,6 @@ impl RenderBox {
 
     pub fn clear(&self) -> Option<ClearType> {
         // Replaced by sonwow
-        /*
-        let style = self.style();
-        match style.clear() {
-            CSSClearNone => None,
-            CSSClearLeft => Some(ClearLeft),
-            CSSClearRight => Some(ClearRight),
-            CSSClearBoth => Some(ClearBoth)
-        };
-        */
-
         let style = self.style_sapin();
         match style.Box.clear {
             clear::none => None,
@@ -1059,8 +1048,6 @@ impl RenderBox {
         if border.is_zero() {
             return
         }
-        //let (top_color, right_color, bottom_color, left_color) = (self.style().border_top_color(), self.style().border_right_color(), self.style().border_bottom_color(), self.style().border_left_color());
-        //let (top_style, right_style, bottom_style, left_style) = (self.style().border_top_style(), self.style().border_right_style(), self.style().border_bottom_style(), self.style().border_left_style());
         let (top_color, right_color, bottom_color, left_color) = (color_exchange1(self.style_sapin().Border.border_top_color), color_exchange1(self.style_sapin().Border.border_right_color), color_exchange1(self.style_sapin().Border.border_bottom_color), color_exchange1(self.style_sapin().Border.border_left_color));
         let (top_style, right_style, bottom_style, left_style) = (self.style_sapin().Border.border_top_style, self.style_sapin().Border.border_right_style, self.style_sapin().Border.border_bottom_style, self.style_sapin().Border.border_left_style);
 

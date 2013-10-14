@@ -47,8 +47,6 @@ use servo_util::time;
 use servo_util::range::Range;
 use extra::url::Url;
 
-//use script::style::selector_matching::{Stylist, AuthorOrigin};
-
 use script::dom::node::{AbstractNode, LayoutView/*, ScriptView*/};
 use script::style::selector_matching::*;
 use extra::time::precise_time_ns;
@@ -71,7 +69,6 @@ struct LayoutTask {
     css_select_ctx: @mut SelectCtx,
     stylist: Stylist,
     profiler_chan: ProfilerChan,
-    // css_data: ~str,
 }
 
 impl LayoutTask {
@@ -137,7 +134,6 @@ impl LayoutTask {
             css_select_ctx: @mut new_css_select_ctx(),
             stylist: stylist,
             profiler_chan: profiler_chan,
-            // css_data: css_data
         }
     }
 
@@ -194,7 +190,7 @@ impl LayoutTask {
     }
 
     fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
-        error!("handle_add_stylesheet");
+        //error!("handle_add_stylesheet");
         // self.css_select_ctx.append_sheet(sheet, OriginAuthor);
     }
 
@@ -202,10 +198,7 @@ impl LayoutTask {
         error!("handle_add_stylesheet2");
         match sheet.data {
             Some(ref css_data) => {
-                // if (self.css_data.len() == 0) ||
-                    // ((self.css_data != *css_data) && (css_data.len() > 0)) {
-                    self.stylist.add_stylesheet(*css_data, AuthorOrigin);
-                // }
+                self.stylist.add_stylesheet(*css_data, AuthorOrigin);
             }
             None => {}
         }
@@ -315,8 +308,6 @@ impl LayoutTask {
             true
         };
 
-
-
         debug!("layout: constructed Flow tree");
         debug!("%?", layout_root.dump());
 
@@ -356,8 +347,8 @@ impl LayoutTask {
 
             debug!("after assign_height: constructed Flow tree");
             debug!("%?", layout_root.dump());
-        }
 
+        }
 
         // Build the display list if necessary, and send it to the renderer.
         if data.goal == ReflowForDisplay {
