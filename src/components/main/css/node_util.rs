@@ -19,7 +19,7 @@ pub trait NodeUtil<'self> {
 }
 
 impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
-    /** 
+    /**
      * Provides the computed style for the given node. If CSS selector
      * Returns the style results for the given node. If CSS selector
      * matching has not yet been performed, fails.

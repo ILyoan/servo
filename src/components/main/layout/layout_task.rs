@@ -6,7 +6,7 @@
 /// rendered.
 
 use css::matching::MatchMethods;
-use css::select::{new_css_select_ctx, html4_default_style_str_tmp};
+use css::select::{new_css_select_ctx, html4_default_style_str_sapin, servo_default_style_str_sapin};
 use layout::aux::LayoutAuxMethods;
 use layout::box_builder::LayoutTreeBuilder;
 use layout::context::LayoutContext;
@@ -29,7 +29,7 @@ use gfx::render_task::{RenderMsg, RenderChan, RenderLayer};
 use gfx::render_task;
 use newcss::select::SelectCtx;
 use newcss::stylesheet::Stylesheet;
-use newcss::types::OriginAuthor;
+// use newcss::types::OriginAuthor;
 use script::dom::event::ReflowEvent;
 use script::layout_interface::{AddStylesheetMsg, ContentBoxQuery, AddCSSDataMsg};
 use script::layout_interface::{HitTestQuery, ContentBoxResponse, HitTestResponse};
@@ -46,8 +46,6 @@ use servo_util::time::{ProfilerChan, profile};
 use servo_util::time;
 use servo_util::range::Range;
 use extra::url::Url;
-
-//use script::style::selector_matching::{Stylist, AuthorOrigin};
 
 use script::dom::node::{AbstractNode, LayoutView/*, ScriptView*/};
 use script::style::selector_matching::*;
@@ -69,8 +67,8 @@ struct LayoutTask {
     display_list: Option<Arc<DisplayList<AbstractNode<()>>>>,
 
     css_select_ctx: @mut SelectCtx,
+    stylist: Stylist,
     profiler_chan: ProfilerChan,
-    css_data: ~str
 }
 
 impl LayoutTask {
@@ -115,6 +113,9 @@ impl LayoutTask {
            css_data: ~str)
            -> LayoutTask {
         let fctx = @mut FontContext::new(opts.render_backend, true, profiler_chan.clone());
+        let mut stylist = Stylist::new();
+        stylist.add_stylesheet(html4_default_style_str_sapin(), UserAgentOrigin);
+        stylist.add_stylesheet(servo_default_style_str_sapin(), UserAgentOrigin);
 
         LayoutTask {
             id: id,
@@ -131,8 +132,8 @@ impl LayoutTask {
             display_list: None,
 
             css_select_ctx: @mut new_css_select_ctx(),
+            stylist: stylist,
             profiler_chan: profiler_chan,
-            css_data: css_data
         }
     }
 
@@ -190,27 +191,17 @@ impl LayoutTask {
 
     fn handle_add_stylesheet(&mut self, sheet: Stylesheet) {
         //error!("handle_add_stylesheet");
-        self.css_select_ctx.append_sheet(sheet, OriginAuthor);
+        // self.css_select_ctx.append_sheet(sheet, OriginAuthor);
     }
 
     fn handle_add_stylesheet2(&mut self, sheet: CSSData) {
         error!("handle_add_stylesheet2");
         match sheet.data {
             Some(ref css_data) => {
-                if self.css_data.len() == 0 {
-                    error!("1css_data: %?", css_data);
-                    error!("1self.css_data: %?",self.css_data);
-                    self.css_data = css_data.to_owned()
-                } else if (self.css_data != *css_data) && (css_data.len() > 0) {
-                    error!("2css_data: %?", css_data.clone());
-                    error!("2self.css_data: %?",self.css_data);
-                    self.css_data = css_data.to_owned();
-                }
-
+                self.stylist.add_stylesheet(*css_data, AuthorOrigin);
             }
             None => {}
         }
-        self.css_select_ctx.append_sheet(sheet.sheet, OriginAuthor);
     }
 
     /// The high-level routine that performs layout tasks.
@@ -253,27 +244,19 @@ impl LayoutTask {
             ReflowDocumentDamage => {}
             MatchSelectorsDocumentDamage => {
                 do profile(time::LayoutSelectorMatchCategory, self.profiler_chan.clone()) {
+                    // let s = precise_time_ns();
+                    // node.restyle_subtree(self.css_select_ctx);
+                    // let e = precise_time_ns();
+                    // let ms = ((e - s) as float / 1000000f);
+                    // error!("1. netsurfcss css selector matching : %? ms", ms);
+
                     let s = precise_time_ns();
-                    node.restyle_subtree(self.css_select_ctx);
+                    node.match_subtree(&self.stylist);
+                    node.cascade_subtree(None);
                     let e = precise_time_ns();
                     let ms = ((e - s) as float / 1000000f);
-                    error!("1. netsurfcss css selector matching : %? ms", ms);
+                    error!("2. simon`s css selector matching    : %? ms", ms);
                 }
-
-                let mut style = Stylist::new();
-                error!("css data: %?", self.css_data);
-                style.add_stylesheet(html4_default_style_str_tmp(), UserAgentOrigin);
-                style.add_stylesheet(self.css_data, AuthorOrigin);
-
-                error!("style: %?", style);
-                let s1 = precise_time_ns();
-                node.match_subtree_task(&style);
-                let s2 = precise_time_ns();
-                node.cascade_subtree(None);
-                let e = precise_time_ns();
-                let ms1 = ((s2 - s1) as float / 1000000f);
-                let ms2 = ((e - s2) as float / 1000000f);
-                error!("2. simon`s css total: %?ms (selector matching: %?ms, cascading: %?ms)", ms1 + ms2, ms1, ms2);
             }
         }
 
